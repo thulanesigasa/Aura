@@ -202,10 +202,13 @@
                     class="w-full bg-mil-softBg border-b border-mil-border py-3 px-4 focus:outline-none focus:border-mil-accent"
                     placeholder="e.g. Red Apples">
 
-                <!-- Image Suggestions Area -->
-                <div id="image-suggestions" class="mt-4 hidden animate-slide-up">
-                    <p class="text-[9px] uppercase tracking-[1px] font-bold text-mil-softDark mb-2">Suggested Images</p>
-                    <div id="suggestions-grid" class="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
+                <!-- Premium Image Selection Grid (Woolies/Checkers inspired) -->
+                <div id="image-suggestions" class="mt-6 hidden animate-slide-up">
+                    <p
+                        class="text-[10px] uppercase tracking-[1.5px] font-bold text-mil-softDark mb-3 border-b border-mil-border pb-2">
+                        Suggested High-Quality Images</p>
+                    <div id="suggestions-grid"
+                        class="grid grid-cols-3 gap-3 max-h-[220px] overflow-y-auto pr-2 custom-scrollbar">
                         <!-- Suggestions go here -->
                     </div>
                 </div>
@@ -495,7 +498,7 @@
         }
     }
 
-    // --- Product Image Suggestion Logic ---
+    // --- Premium Image Selection Collection ---
     const IMAGE_COLLECTION = {
         'apple': 'https://images.unsplash.com/photo-1560806887-1e4cd0b6bcd6?w=400&auto=format&fit=crop',
         'green apple': 'https://images.unsplash.com/photo-1610397648930-477b8c7f0943?w=400&auto=format&fit=crop',
@@ -503,7 +506,7 @@
         'milk': 'https://images.unsplash.com/photo-1563636619-e9107da4a1bb?w=400&auto=format&fit=crop',
         'bread': 'https://images.unsplash.com/photo-1549931319-a545dcf3bc73?w=400&auto=format&fit=crop',
         'eggs': 'https://images.unsplash.com/photo-1506976785307-8732e854ad03?w=400&auto=format&fit=crop',
-        'banana': 'https://images.unsplash.com/photo-1571771894821-ad99026.jpg?w=400&auto=format&fit=crop',
+        'banana': 'https://images.unsplash.com/photo-1571771894821-ad99026?w=400&auto=format&fit=crop',
         'orange': 'https://images.unsplash.com/photo-1547514701-42782101795e?w=400&auto=format&fit=crop',
         'tomato': 'https://images.unsplash.com/photo-1518977676601-b53f02ac6d31?w=400&auto=format&fit=crop',
         'potato': 'https://images.unsplash.com/photo-1518977676601-b53f02ac6d31?w=400&auto=format&fit=crop',
@@ -523,7 +526,10 @@
         'water': 'https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=400&auto=format&fit=crop',
         'juice': 'https://images.unsplash.com/photo-1621236304191-f5293290373c?w=400&auto=format&fit=crop',
         'chips': 'https://images.unsplash.com/photo-1566478989037-eec170784d0b?w=400&auto=format&fit=crop',
-        'chocolate': 'https://images.unsplash.com/photo-1511381939415-e4401546383d?w=400&auto=format&fit=crop'
+        'chocolate': 'https://images.unsplash.com/photo-1511381939415-e4401546383d?w=400&auto=format&fit=crop',
+        'detergent': 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=400&auto=format&fit=crop',
+        'soap': 'https://images.unsplash.com/photo-1605264964528-06403738d6dc?w=400&auto=format&fit=crop',
+        'toothpaste': 'https://images.unsplash.com/photo-1559591937-e620a3221e44?w=400&auto=format&fit=crop'
     };
 
     function suggestImages(query) {
@@ -542,22 +548,40 @@
             grid.innerHTML = '';
             matches.forEach(([key, url]) => {
                 const div = document.createElement('div');
-                div.className = 'flex-shrink-0 cursor-pointer group relative w-16 h-16 rounded overflow-hidden border-2 border-transparent hover:border-mil-accent transition-all';
+                div.className = 'image-suggest-item flex-shrink-0 cursor-pointer group relative aspect-square rounded-2xl overflow-hidden border-4 border-transparent hover:border-mil-accent transition-all bg-mil-softBg shadow-sm hover:shadow-xl';
                 div.onclick = () => selectImage(url);
-                div.innerHTML = `<img src="${url}" class="w-full h-full object-cover group-hover:scale-110 transition-transform">
-                                <div class="absolute inset-0 bg-black/20 group-hover:bg-transparent"></div>`;
+                div.dataset.url = url;
+                div.innerHTML = `
+                    <img src="${url}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                    <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-2">
+                        <p class="text-[8px] text-white uppercase font-bold truncate">${key}</p>
+                    </div>
+                `;
                 grid.appendChild(div);
             });
             container.classList.remove('hidden');
+
+            // Check if current image matches any match
+            const currentUrl = document.getElementById('modal-image-url').value;
+            if (currentUrl) highlightSelectedImage(currentUrl);
         } else {
             container.classList.add('hidden');
         }
     }
 
+    function highlightSelectedImage(url) {
+        document.querySelectorAll('.image-suggest-item').forEach(item => {
+            const isSelected = item.dataset.url === url;
+            item.classList.toggle('border-mil-accent', isSelected);
+            item.classList.toggle('ring-4', isSelected);
+            item.classList.toggle('ring-mil-accent/30', isSelected);
+        });
+    }
+
     function selectImage(url) {
         document.getElementById('modal-image-url').value = url;
         showImagePreview(url);
-        document.getElementById('image-suggestions').classList.add('hidden');
+        highlightSelectedImage(url);
     }
 
     function showImagePreview(url) {
