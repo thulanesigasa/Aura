@@ -65,6 +65,14 @@ def init_db(app):
                     total           NUMERIC(10,2),
                     created_at      TIMESTAMP DEFAULT NOW()
                 );
+
+                CREATE TABLE IF NOT EXISTS users (
+                    id              SERIAL PRIMARY KEY,
+                    shop_id         INTEGER REFERENCES shops(id) ON DELETE CASCADE,
+                    email           VARCHAR(200) UNIQUE NOT NULL,
+                    password_hash   VARCHAR(500) NOT NULL,
+                    created_at      TIMESTAMP DEFAULT NOW()
+                );
                 """
             )
             cur.close()

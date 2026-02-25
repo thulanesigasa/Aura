@@ -1,7 +1,8 @@
 """Flask routes for the Aura platform."""
 
 import json
-from flask import Blueprint, render_template, Response, abort
+from flask import Blueprint, render_template, Response, abort, request, redirect, url_for, session
+from werkzeug.security import generate_password_hash, check_password_hash
 from .db import get_db
 from .seo_utils import generate_sitemap_xml, build_local_business_jsonld
 
@@ -40,6 +41,25 @@ def _fetch_shop_by_slug(slug):
             "postal_code, phone, latitude, longitude, opening_hours, "
             "image_url, is_delivery FROM shops WHERE slug = %s;",
             (slug,),
+        )
+        cols = [d[0] for d in cur.description]
+        row = cur.fetchone()
+        cur.close()
+        return dict(zip(cols, row)) if row else None
+    except Exception:
+        return None
+
+
+def _fetch_shop_by_id(shop_id):
+    """Return a single shop dict or None by ID."""
+    try:
+        db = get_db()
+        cur = db.cursor()
+        cur.execute(
+            "SELECT id, name, slug, description, address, city, province, "
+            "postal_code, phone, latitude, longitude, opening_hours, "
+            "image_url, is_delivery FROM shops WHERE id = %s;",
+            (shop_id,),
         )
         cols = [d[0] for d in cur.description]
         row = cur.fetchone()
@@ -120,12 +140,103 @@ def join():
 
 # ── Admin endpoints ──────────────────────────────────────────────────────────
 
+@bp.route("/admin/")
+def admin_root():
+    """Redirect /admin/ to dashboard or login."""
+    if "user_id" not in session:
+        return redirect(url_for("main.admin_login"))
+    
+    shop = _fetch_shop_by_id(session.get("shop_id"))
+    if not shop:
+        # Should not happen if data is consistent, but handle it
+        session.clear()
+        return redirect(url_for("main.admin_login"))
+        
+    return redirect(url_for("main.admin_dashboard", shop_name=shop["slug"]))
+
+
+@bp.route("/admin/login", methods=["GET", "POST"])
+def admin_login():
+    """Login for shop owners."""
+    if request.method == "POST":
+        email = request.form.get("email")
+        password = request.form.get("password")
+        
+        db = get_db()
+        cur = db.cursor()
+        cur.execute("SELECT id, shop_id, password_hash FROM users WHERE email = %s;", (email,))
+        user = cur.fetchone()
+        cur.close()
+        
+        if user and check_password_hash(user[2], password):
+            session["user_id"] = user[0]
+            session["shop_id"] = user[1]
+            shop = _fetch_shop_by_id(user[1])
+            return redirect(url_for("main.admin_dashboard", shop_name=shop["slug"]))
+        else:
+            return render_template("login.html", error="Invalid email or password")
+            
+    return render_template("login.html")
+
+
+@bp.route("/admin/signup", methods=["GET", "POST"])
+def admin_signup():
+    """Signup for new shop owners."""
+    shops = _fetch_all_shops() # To let them pick their shop for now
+    
+    if request.method == "POST":
+        email = request.form.get("email")
+        password = request.form.get("password")
+        shop_id = request.form.get("shop_id")
+        
+        if not email or not password or not shop_id:
+            return render_template("signup.html", shops=shops, error="All fields are required")
+            
+        db = get_db()
+        cur = db.cursor()
+        
+        # Check if email exists
+        cur.execute("SELECT id FROM users WHERE email = %s;", (email,))
+        if cur.fetchone():
+            cur.close()
+            return render_template("signup.html", shops=shops, error="Email already registered")
+            
+        password_hash = generate_password_hash(password)
+        try:
+            cur.execute(
+                "INSERT INTO users (shop_id, email, password_hash) VALUES (%s, %s, %s) RETURNING id;",
+                (shop_id, email, password_hash)
+            )
+            user_id = cur.fetchone()[0]
+            cur.close()
+            
+            session["user_id"] = user_id
+            session["shop_id"] = int(shop_id)
+            shop = _fetch_shop_by_id(int(shop_id))
+            return redirect(url_for("main.admin_dashboard", shop_name=shop["slug"]))
+        except Exception as e:
+            return render_template("signup.html", shops=shops, error=f"Regiration failed: {e}")
+            
+    return render_template("signup.html", shops=shops)
+
+
+@bp.route("/admin/logout")
+def admin_logout():
+    """Logout shop owner."""
+    session.clear()
+    return redirect(url_for("main.index"))
+
+
 @bp.route("/admin/<shop_name>")
 def admin_dashboard(shop_name):
     """Hidden admin dashboard for shop owners."""
+    if "user_id" not in session:
+        return redirect(url_for("main.admin_login"))
+        
     shop = _fetch_shop_by_slug(shop_name)
-    if not shop:
-        abort(404)
+    if not shop or shop["id"] != session.get("shop_id"):
+        abort(403) # Forbidden if trying to access other shop's admin
+        
     products = _fetch_products_for_shop(shop["id"])
     return render_template("admin.html", shop=shop, products=products)
 
@@ -133,17 +244,23 @@ def admin_dashboard(shop_name):
 @bp.route("/admin/api/product/<int:product_id>/toggle", methods=["POST"])
 def toggle_product_stock(product_id):
     """Toggle the in_stock boolean for a given product."""
+    if "user_id" not in session:
+        return Response(json.dumps({"error": "Unauthorized"}), status=401, mimetype="application/json")
+        
     try:
         db = get_db()
         cur = db.cursor()
         
-        # Get current status
-        cur.execute("SELECT in_stock FROM products WHERE id = %s;", (product_id,))
+        # Verify ownership
+        cur.execute("SELECT shop_id, in_stock FROM products WHERE id = %s;", (product_id,))
         row = cur.fetchone()
         if not row:
             return Response(json.dumps({"error": "Product not found"}), status=404, mimetype="application/json")
             
-        new_status = not row[0]
+        if row[0] != session.get("shop_id"):
+            return Response(json.dumps({"error": "Forbidden"}), status=403, mimetype="application/json")
+            
+        new_status = not row[1]
         
         # Update status
         cur.execute("UPDATE products SET in_stock = %s WHERE id = %s;", (new_status, product_id))
@@ -175,3 +292,8 @@ def robots():
 @bp.app_errorhandler(404)
 def page_not_found(e):
     return render_template("404.html"), 404
+
+
+@bp.app_errorhandler(403)
+def forbidden(e):
+    return render_template("404.html"), 403 # Reuse 404 or create a 403 if needed

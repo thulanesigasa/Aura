@@ -7,8 +7,11 @@
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center animate-slide-up">
         <h1 class="text-3xl md:text-5xl font-bold text-mil-light tracking-tight mb-4">Shop <span
                 class="text-mil-accent font-light">Admin</span></h1>
-        <p class="text-lg text-[rgba(255,255,255,0.6)]">Managing Inventory for: <strong class="text-mil-light">{{
+        <p class="text-lg text-[rgba(255,255,255,0.6)] mb-6">Managing Inventory for: <strong class="text-mil-light">{{
                 shop.name }}</strong></p>
+        <a href="{{ url_for('main.admin_logout') }}"
+            class="text-[11px] uppercase tracking-[2px] font-bold text-[rgba(255,255,255,0.4)] hover:text-mil-accent transition-colors">Logout
+            Dashboard</a>
     </div>
 </section>
 

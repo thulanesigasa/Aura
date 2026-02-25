@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Sign Up | Aura Shop Admin{% endblock %}
+
+{% block content %}
+<section class="bg-[#1a1a1a] pt-24 pb-20 border-b border-[rgba(255,255,255,0.1)] relative z-10">
+    <div class="max-w-md mx-auto px-4 text-center animate-slide-up">
+        <h1 class="text-4xl font-bold text-mil-light tracking-tight mb-4">Admin <span
+                class="text-mil-accent font-light">Signup</span></h1>
+        <p class="text-lg text-[rgba(255,255,255,0.6)]">Register your account to manage your Spaza shop.</p>
+    </div>
+</section>
+
+<section class="bg-mil-softBg py-20 relative z-10 min-h-[700px]">
+    <div class="max-w-md mx-auto px-4">
+
+        <div class="bg-white border border-mil-border p-8 shadow-sm animate-slide-up" style="animation-delay:.1s">
+            {% if error %}
+            <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
+                <p class="text-red-700 text-sm">{{ error }}</p>
+            </div>
+            {% endif %}
+
+            <form action="{{ url_for('main.admin_signup') }}" method="POST" class="space-y-6">
+                <div>
+                    <label for="shop_id"
+                        class="block text-[11px] uppercase tracking-[2px] font-bold text-mil-dark mb-2">Select Your
+                        Shop</label>
+                    <select name="shop_id" id="shop_id" required
+                        class="w-full bg-mil-softBg border-b border-mil-border py-3 px-4 text-mil-dark focus:outline-none focus:border-mil-accent transition-all">
+                        <option value="" disabled selected>Select a shop...</option>
+                        {% for shop in shops %}
+                        <option value="{{ shop.id }}">{{ shop.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label for="email"
+                        class="block text-[11px] uppercase tracking-[2px] font-bold text-mil-dark mb-2">Email
+                        Address</label>
+                    <input type="email" name="email" id="email" required
+                        class="w-full bg-mil-softBg border-b border-mil-border py-3 px-4 text-mil-dark focus:outline-none focus:border-mil-accent transition-all placeholder:text-[rgba(0,0,0,0.3)]">
+                </div>
+
+                <div>
+                    <label for="password"
+                        class="block text-[11px] uppercase tracking-[2px] font-bold text-mil-dark mb-2">Password</label>
+                    <input type="password" name="password" id="password" required
+                        class="w-full bg-mil-softBg border-b border-mil-border py-3 px-4 text-mil-dark focus:outline-none focus:border-mil-accent transition-all placeholder:text-[rgba(0,0,0,0.3)]">
+                </div>
+
+                <div class="pt-4">
+                    <button type="submit"
+                        class="mil-button inline-flex items-center justify-between h-[55px] pl-6 pr-2 bg-mil-dark text-mil-light text-[12px] uppercase tracking-[2px] font-bold rounded-full hover:brightness-110 transition-all group w-full">
+                        <span>Create Account</span>
+                        <div
+                            class="w-10 h-10 rounded-full bg-mil-accent flex items-center justify-center opacity-90 group-hover:scale-110 transition-transform">
+                            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 4v16m8-8H4" />
+                            </svg>
+                        </div>
+                    </button>
+                </div>
+            </form>
+
+            <div class="mt-10 pt-6 border-t border-mil-border text-center">
+                <p class="text-sm text-mil-softDark">Already have an account?</p>
+                <a href="{{ url_for('main.admin_login') }}"
+                    class="inline-block mt-2 text-[11px] uppercase tracking-[2px] font-bold text-mil-accent hover:text-mil-dark transition-colors">Login
+                    Here</a>
+            </div>
+        </div>
+
+    </div>
+</section>
+{% endblock %}
