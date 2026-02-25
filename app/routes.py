@@ -179,6 +179,14 @@ def admin_login():
     return render_template("login.html")
 
 
+def validate_password(password):
+    """Ensure password is at least 8 chars and contains a number."""
+    if len(password) < 8:
+        return False, "Password must be at least 8 characters long"
+    if not any(char.isdigit() for char in password):
+        return False, "Password must contain at least one number"
+    return True, ""
+
 @bp.route("/admin/signup", methods=["GET", "POST"])
 def admin_signup():
     """Signup for new shop owners – creating a new shop automatically with full details."""
@@ -195,6 +203,11 @@ def admin_signup():
         
         if not email or not password or not shop_name or not first_name or not last_name or not phone:
             return render_template("signup.html", error="Basic info and Shop Name are required")
+            
+        # Backend Password Validation
+        is_valid, msg = validate_password(password)
+        if not is_valid:
+            return render_template("signup.html", error=msg)
             
         db = get_db()
         cur = db.cursor()
@@ -238,6 +251,86 @@ def admin_signup():
             return render_template("signup.html", error=f"Registration failed: {e}")
             
     return render_template("signup.html")
+
+@bp.route("/admin/api/product/add", methods=["POST"])
+def add_product():
+    """Add a new product to the shop."""
+    if "user_id" not in session:
+        return Response(json.dumps({"error": "Unauthorized"}), status=401, mimetype="application/json")
+        
+    data = request.json
+    name = data.get("name")
+    price = data.get("price")
+    category = data.get("category", "Uncategorized")
+    shop_id = session.get("shop_id")
+    
+    if not name or not price:
+        return Response(json.dumps({"error": "Name and Price required"}), status=400, mimetype="application/json")
+        
+    try:
+        db = get_db()
+        cur = db.cursor()
+        cur.execute(
+            "INSERT INTO products (shop_id, name, price, category, in_stock) VALUES (%s, %s, %s, %s, %s) RETURNING id;",
+            (shop_id, name, price, category, True)
+        )
+        new_id = cur.fetchone()[0]
+        cur.close()
+        return Response(json.dumps({"success": True, "id": new_id}), status=201, mimetype="application/json")
+    except Exception as e:
+        return Response(json.dumps({"error": str(e)}), status=500, mimetype="application/json")
+
+@bp.route("/admin/api/product/<int:product_id>/update", methods=["POST"])
+def update_product(product_id):
+    """Update product name, price, or category."""
+    if "user_id" not in session:
+        return Response(json.dumps({"error": "Unauthorized"}), status=401, mimetype="application/json")
+        
+    data = request.json
+    name = data.get("name")
+    price = data.get("price")
+    category = data.get("category")
+    
+    try:
+        db = get_db()
+        cur = db.cursor()
+        # Verify ownership
+        cur.execute("SELECT shop_id FROM products WHERE id = %s;", (product_id,))
+        row = cur.fetchone()
+        if not row or row[0] != session.get("shop_id"):
+            cur.close()
+            return Response(json.dumps({"error": "Forbidden"}), status=403, mimetype="application/json")
+            
+        cur.execute(
+            "UPDATE products SET name = %s, price = %s, category = %s WHERE id = %s;",
+            (name, price, category, product_id)
+        )
+        cur.close()
+        return Response(json.dumps({"success": True}), status=200, mimetype="application/json")
+    except Exception as e:
+        return Response(json.dumps({"error": str(e)}), status=500, mimetype="application/json")
+
+@bp.route("/admin/api/product/<int:product_id>/delete", methods=["POST"])
+def delete_product(product_id):
+    """Remove a product from the shop."""
+    if "user_id" not in session:
+        return Response(json.dumps({"error": "Unauthorized"}), status=401, mimetype="application/json")
+        
+    try:
+        db = get_db()
+        cur = db.cursor()
+        # Verify ownership
+        cur.execute("SELECT shop_id FROM products WHERE id = %s;", (product_id,))
+        row = cur.fetchone()
+        if not row or row[0] != session.get("shop_id"):
+            cur.close()
+            return Response(json.dumps({"error": "Forbidden"}), status=403, mimetype="application/json")
+            
+        cur.execute("DELETE FROM products WHERE id = %s;", (product_id,))
+        cur.close()
+        return Response(json.dumps({"success": True}), status=200, mimetype="application/json")
+    except Exception as e:
+        return Response(json.dumps({"error": str(e)}), status=500, mimetype="application/json")
 
 
 @bp.route("/admin/logout")

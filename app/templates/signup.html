@@ -94,7 +94,75 @@
                         class="block text-[11px] uppercase tracking-[2px] font-bold text-mil-dark mb-2">Password</label>
                     <input type="password" name="password" id="password" required
                         class="w-full bg-mil-softBg border-b border-mil-border py-3 px-4 text-mil-dark focus:outline-none focus:border-mil-accent transition-all placeholder:text-[rgba(0,0,0,0.3)]">
+
+                    <!-- Password Strength Meter -->
+                    <div class="mt-3">
+                        <div class="h-1 w-full bg-gray-200 rounded-full overflow-hidden">
+                            <div id="strength-bar" class="h-full w-0 transition-all duration-300 bg-red-500"></div>
+                        </div>
+                        <p id="strength-text"
+                            class="text-[10px] uppercase tracking-[1px] font-bold mt-2 text-red-500 text-right">
+                            Strength: Weak</p>
+                    </div>
+
+                    <!-- Password Requirements -->
+                    <ul class="mt-4 space-y-1">
+                        <li id="req-length" class="text-[10px] flex items-center gap-2 text-gray-400"><span
+                                class="w-1.5 h-1.5 rounded-full bg-current"></span> At least 8 characters</li>
+                        <li id="req-number" class="text-[10px] flex items-center gap-2 text-gray-400"><span
+                                class="w-1.5 h-1.5 rounded-full bg-current"></span> Contains a number</li>
+                    </ul>
                 </div>
+
+                <script>
+                    const passwordInput = document.getElementById('password');
+                    const strengthBar = document.getElementById('strength-bar');
+                    const strengthText = document.getElementById('strength-text');
+                    const reqLength = document.getElementById('req-length');
+                    const reqNumber = document.getElementById('req-number');
+
+                    passwordInput.addEventListener('input', () => {
+                        const val = passwordInput.value;
+                        let strength = 0;
+
+                        // Length check
+                        if (val.length >= 8) {
+                            strength += 50;
+                            reqLength.classList.remove('text-gray-400');
+                            reqLength.classList.add('text-green-500');
+                        } else {
+                            reqLength.classList.remove('text-green-500');
+                            reqLength.classList.add('text-gray-400');
+                        }
+
+                        // Number check
+                        if (/\d/.test(val)) {
+                            strength += 50;
+                            reqNumber.classList.remove('text-gray-400');
+                            reqNumber.classList.add('text-green-500');
+                        } else {
+                            reqNumber.classList.remove('text-green-500');
+                            reqNumber.classList.add('text-gray-400');
+                        }
+
+                        // Update UI
+                        strengthBar.style.width = strength + '%';
+
+                        if (strength === 0) {
+                            strengthBar.className = 'h-full w-0 transition-all duration-300 bg-red-500';
+                            strengthText.textContent = 'Strength: Weak';
+                            strengthText.className = 'text-[10px] uppercase tracking-[1px] font-bold mt-2 text-red-500 text-right';
+                        } else if (strength === 50) {
+                            strengthBar.className = 'h-full transition-all duration-300 bg-orange-500';
+                            strengthText.textContent = 'Strength: Fair';
+                            strengthText.className = 'text-[10px] uppercase tracking-[1px] font-bold mt-2 text-orange-500 text-right';
+                        } else {
+                            strengthBar.className = 'h-full transition-all duration-300 bg-green-500';
+                            strengthText.textContent = 'Strength: Strong';
+                            strengthText.className = 'text-[10px] uppercase tracking-[1px] font-bold mt-2 text-green-500 text-right';
+                        }
+                    });
+                </script>
 
                 <div class="pt-4">
                     <button type="submit"
