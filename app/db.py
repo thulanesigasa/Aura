@@ -69,6 +69,9 @@ def init_db(app):
                 CREATE TABLE IF NOT EXISTS users (
                     id              SERIAL PRIMARY KEY,
                     shop_id         INTEGER REFERENCES shops(id) ON DELETE CASCADE,
+                    first_name      VARCHAR(100),
+                    last_name       VARCHAR(100),
+                    phone           VARCHAR(20),
                     email           VARCHAR(200) UNIQUE NOT NULL,
                     password_hash   VARCHAR(500) NOT NULL,
                     created_at      TIMESTAMP DEFAULT NOW()

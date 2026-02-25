@@ -181,14 +181,20 @@ def admin_login():
 
 @bp.route("/admin/signup", methods=["GET", "POST"])
 def admin_signup():
-    """Signup for new shop owners – creating a new shop automatically."""
+    """Signup for new shop owners – creating a new shop automatically with full details."""
     if request.method == "POST":
         email = request.form.get("email")
         password = request.form.get("password")
         shop_name = request.form.get("shop_name")
+        first_name = request.form.get("first_name")
+        last_name = request.form.get("last_name")
+        phone = request.form.get("phone")
+        address = request.form.get("address")
+        city = request.form.get("city", "Standerton")
+        province = request.form.get("province", "Mpumalanga")
         
-        if not email or not password or not shop_name:
-            return render_template("signup.html", error="All fields are required")
+        if not email or not password or not shop_name or not first_name or not last_name or not phone:
+            return render_template("signup.html", error="Basic info and Shop Name are required")
             
         db = get_db()
         cur = db.cursor()
@@ -202,25 +208,25 @@ def admin_signup():
         # Generate slug from shop name
         import re
         slug = re.sub(r'[^a-zA-Z0-9]', '-', shop_name.lower()).strip('-')
-        # Ensure slug unique (basic check/append tail)
+        # Ensure slug unique
         cur.execute("SELECT id FROM shops WHERE slug = %s;", (slug,))
         if cur.fetchone():
             import time
             slug = f"{slug}-{int(time.time() % 1000)}"
 
         try:
-            # 1. Create the Shop
+            # 1. Create the Shop with full address/city/province
             cur.execute(
-                "INSERT INTO shops (name, slug, city, province) VALUES (%s, %s, %s, %s) RETURNING id;",
-                (shop_name, slug, "Standerton", "Mpumalanga")
+                "INSERT INTO shops (name, slug, address, city, province, phone) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id;",
+                (shop_name, slug, address, city, province, phone)
             )
             shop_id = cur.fetchone()[0]
             
-            # 2. Create the User
+            # 2. Create the User with owner details
             password_hash = generate_password_hash(password)
             cur.execute(
-                "INSERT INTO users (shop_id, email, password_hash) VALUES (%s, %s, %s) RETURNING id;",
-                (shop_id, email, password_hash)
+                "INSERT INTO users (shop_id, first_name, last_name, phone, email, password_hash) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id;",
+                (shop_id, first_name, last_name, phone, email, password_hash)
             )
             user_id = cur.fetchone()[0]
             cur.close()

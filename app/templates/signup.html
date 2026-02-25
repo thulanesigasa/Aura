@@ -22,25 +22,71 @@
             {% endif %}
 
             <form action="{{ url_for('main.admin_signup') }}" method="POST" class="space-y-6">
-                <div>
-                    <label for="shop_id"
-                        class="block text-[11px] uppercase tracking-[2px] font-bold text-mil-dark mb-2">Select Your
-                        Shop</label>
-                    <select name="shop_id" id="shop_id" required
-                        class="w-full bg-mil-softBg border-b border-mil-border py-3 px-4 text-mil-dark focus:outline-none focus:border-mil-accent transition-all">
-                        <option value="" disabled selected>Select a shop...</option>
-                        {% for shop in shops %}
-                        <option value="{{ shop.id }}">{{ shop.name }}</option>
-                        {% endfor %}
-                    </select>
+                <!-- Personal Info Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div>
+                        <label for="first_name"
+                            class="block text-[11px] uppercase tracking-[2px] font-bold text-mil-dark mb-2">First
+                            Name</label>
+                        <input type="text" name="first_name" id="first_name" placeholder="John" required
+                            class="w-full bg-mil-softBg border-b border-mil-border py-3 px-4 text-mil-dark focus:outline-none focus:border-mil-accent transition-all placeholder:text-[rgba(0,0,0,0.3)]">
+                    </div>
+                    <div>
+                        <label for="last_name"
+                            class="block text-[11px] uppercase tracking-[2px] font-bold text-mil-dark mb-2">Surname</label>
+                        <input type="text" name="last_name" id="last_name" placeholder="Doe" required
+                            class="w-full bg-mil-softBg border-b border-mil-border py-3 px-4 text-mil-dark focus:outline-none focus:border-mil-accent transition-all placeholder:text-[rgba(0,0,0,0.3)]">
+                    </div>
                 </div>
 
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div>
+                        <label for="phone"
+                            class="block text-[11px] uppercase tracking-[2px] font-bold text-mil-dark mb-2">Phone
+                            Number</label>
+                        <input type="tel" name="phone" id="phone" placeholder="071 234 5678" required
+                            class="w-full bg-mil-softBg border-b border-mil-border py-3 px-4 text-mil-dark focus:outline-none focus:border-mil-accent transition-all placeholder:text-[rgba(0,0,0,0.3)]">
+                    </div>
+                    <div>
+                        <label for="email"
+                            class="block text-[11px] uppercase tracking-[2px] font-bold text-mil-dark mb-2">Email
+                            Address</label>
+                        <input type="email" name="email" id="email" placeholder="john@example.com" required
+                            class="w-full bg-mil-softBg border-b border-mil-border py-3 px-4 text-mil-dark focus:outline-none focus:border-mil-accent transition-all placeholder:text-[rgba(0,0,0,0.3)]">
+                    </div>
+                </div>
+
+                <!-- Shop Info -->
                 <div>
-                    <label for="email"
-                        class="block text-[11px] uppercase tracking-[2px] font-bold text-mil-dark mb-2">Email
-                        Address</label>
-                    <input type="email" name="email" id="email" required
+                    <label for="shop_name"
+                        class="block text-[11px] uppercase tracking-[2px] font-bold text-mil-dark mb-2">Shop
+                        Name</label>
+                    <input type="text" name="shop_name" id="shop_name" placeholder="e.g. Sipho's Spaza" required
                         class="w-full bg-mil-softBg border-b border-mil-border py-3 px-4 text-mil-dark focus:outline-none focus:border-mil-accent transition-all placeholder:text-[rgba(0,0,0,0.3)]">
+                </div>
+
+                <!-- Location Info -->
+                <div>
+                    <label for="address"
+                        class="block text-[11px] uppercase tracking-[2px] font-bold text-mil-dark mb-2">Physical
+                        Address</label>
+                    <input type="text" name="address" id="address" placeholder="123 Main Street" required
+                        class="w-full bg-mil-softBg border-b border-mil-border py-3 px-4 text-mil-dark focus:outline-none focus:border-mil-accent transition-all placeholder:text-[rgba(0,0,0,0.3)]">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div>
+                        <label for="city"
+                            class="block text-[11px] uppercase tracking-[2px] font-bold text-mil-dark mb-2">City</label>
+                        <input type="text" name="city" id="city" value="Standerton" required
+                            class="w-full bg-mil-softBg border-b border-mil-border py-3 px-4 text-mil-dark focus:outline-none focus:border-mil-accent transition-all placeholder:text-[rgba(0,0,0,0.3)]">
+                    </div>
+                    <div>
+                        <label for="province"
+                            class="block text-[11px] uppercase tracking-[2px] font-bold text-mil-dark mb-2">Province</label>
+                        <input type="text" name="province" id="province" value="Mpumalanga" required
+                            class="w-full bg-mil-softBg border-b border-mil-border py-3 px-4 text-mil-dark focus:outline-none focus:border-mil-accent transition-all placeholder:text-[rgba(0,0,0,0.3)]">
+                    </div>
                 </div>
 
                 <div>
