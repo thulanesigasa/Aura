@@ -1,0 +1,36 @@
+version: "3.9"
+
+services:
+  web:
+    build: .
+    container_name: aura-web
+    ports:
+      - "8000:8000"
+    environment:
+      - SECRET_KEY=aura-production-secret-change-me
+      - DATABASE_URL=postgresql://aura_user:aura_pass@db:5432/aura_db
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    container_name: aura-db
+    environment:
+      POSTGRES_USER: aura_user
+      POSTGRES_PASSWORD: aura_pass
+      POSTGRES_DB: aura_db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aura_user -d aura_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  pgdata:
