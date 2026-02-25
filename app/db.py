@@ -69,51 +69,30 @@ def init_db(app):
                 CREATE TABLE IF NOT EXISTS users (
                     id              SERIAL PRIMARY KEY,
                     shop_id         INTEGER REFERENCES shops(id) ON DELETE CASCADE,
-                    first_name      VARCHAR(100),
-                    last_name       VARCHAR(100),
-                    phone           VARCHAR(20),
                     email           VARCHAR(200) UNIQUE NOT NULL,
                     password_hash   VARCHAR(500) NOT NULL,
                     created_at      TIMESTAMP DEFAULT NOW()
                 );
+
+                -- Migration: Ensure missing columns exist in shops
+                ALTER TABLE shops ADD COLUMN IF NOT EXISTS address TEXT;
+                ALTER TABLE shops ADD COLUMN IF NOT EXISTS city VARCHAR(100);
+                ALTER TABLE shops ADD COLUMN IF NOT EXISTS province VARCHAR(100);
+                ALTER TABLE shops ADD COLUMN IF NOT EXISTS phone VARCHAR(20);
+                ALTER TABLE shops ALTER COLUMN opening_hours TYPE TEXT;
+                ALTER TABLE shops ADD COLUMN IF NOT EXISTS opening_hours TEXT; -- In case it didn't exist at all
+
+                -- Migration: Ensure missing columns exist in users
+                ALTER TABLE users ADD COLUMN IF NOT EXISTS first_name VARCHAR(100);
+                ALTER TABLE users ADD COLUMN IF NOT EXISTS last_name VARCHAR(100);
+                ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(20);
+
+                -- Migration: Ensure product archiving and images support
+                ALTER TABLE products ADD COLUMN IF NOT EXISTS is_archived BOOLEAN DEFAULT FALSE;
+                ALTER TABLE products ADD COLUMN IF NOT EXISTS image_url VARCHAR(500);
                 """
             )
             cur.close()
             conn.close()
         except Exception as e:
             print(f"[Aura] DB init skipped or failed: {e}")
-
-
-def seed_demo_data(app):
-    """Insert demo shops if the table is empty."""
-    with app.app_context():
-        try:
-            conn = psycopg2.connect(app.config["DATABASE_URL"])
-            conn.autocommit = True
-            cur = conn.cursor()
-            cur.execute("SELECT COUNT(*) FROM shops;")
-            count = cur.fetchone()[0]
-            if count == 0:
-                cur.execute(
-                    """
-                    INSERT INTO shops (name, slug, description, address, city, province, postal_code, phone, latitude, longitude, opening_hours, is_delivery)
-                    VALUES
-                        ('Mama Zinzi''s Spaza', 'mama-zinzis-spaza',
-                         'Your trusted neighbourhood Spaza shop in Khayelitsha, stocking fresh bread, milk, snacks, airtime and everyday essentials.',
-                         '14 Mew Way, Khayelitsha', 'Cape Town', 'Western Cape', '7784', '072 123 4567',
-                         -34.0389, 18.6768, 'Mon-Sat 06:00-20:00', TRUE),
-                        ('Uncle T''s Corner Store', 'uncle-ts-corner-store',
-                         'Friendly corner store in Soweto offering cold drinks, toiletries, snacks and mobile money services.',
-                         '88 Vilakazi St, Orlando West, Soweto', 'Johannesburg', 'Gauteng', '1804', '079 876 5432',
-                         -26.2387, 27.9085, 'Mon-Sun 07:00-21:00', FALSE),
-                        ('Siya''s Daily Needs', 'siyas-daily-needs',
-                         'One-stop Spaza in Mamelodi for groceries, prepaid electricity, and household supplies.',
-                         '23 Tsamaya Ave, Mamelodi East', 'Pretoria', 'Gauteng', '0122', '081 555 6789',
-                         -25.7201, 28.3965, 'Mon-Fri 06:30-19:00, Sat 07:00-17:00', TRUE);
-                    """
-                )
-                print("[Aura] Demo shops seeded.")
-            cur.close()
-            conn.close()
-        except Exception as e:
-            print(f"[Aura] Seed skipped or failed: {e}")

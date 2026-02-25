@@ -26,37 +26,48 @@
     <div class="px-4 w-full max-w-7xl mx-auto">
         <!-- Responsive Grid -->
         <div id="shopGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-
-            <!-- Sample Spaza Shop Card 1 -->
-            <div
-                class="shop-card bg-mil-light rounded-none border border-mil-border flex flex-col transition-all hover:shadow-[0_10px_30px_rgba(0,0,0,0.05)] hover:-translate-y-1">
-                <!-- Placeholder Image -->
+            {% if shops %}
+            {% for shop in shops %}
+            <div class="shop-card bg-mil-light rounded-none border border-mil-border flex flex-col transition-all hover:shadow-[0_10px_30px_rgba(0,0,0,0.05)] hover:-translate-y-1 animate-slide-up"
+                style="animation-delay: {{ loop.index0 * 0.1 }}s">
+                <!-- Shop Image / Placeholder -->
                 <div class="h-48 bg-mil-softBg relative w-full flex items-center justify-center overflow-hidden group">
-                    <!-- Abstract placeholder shape -->
+                    {% if shop.image_url %}
+                    <img src="{{ shop.image_url }}" alt="{{ shop.name }}"
+                        class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                    {% else %}
                     <svg class="w-12 h-12 text-mil-border transform group-hover:scale-110 transition-transform duration-500"
                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                             d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" />
                     </svg>
+                    {% endif %}
+
+                    {% if shop.is_delivery %}
+                    <div
+                        class="absolute top-4 right-4 bg-mil-accent text-mil-dark text-[9px] font-bold px-2 py-1 rounded tracking-[1px] uppercase">
+                        Delivers
+                    </div>
+                    {% endif %}
                 </div>
 
                 <div class="p-8 flex flex-col flex-1">
                     <div class="mb-4">
-                        <!-- Standerton Location Badge -->
                         <span class="text-[10px] uppercase tracking-[2px] font-bold text-mil-softDark mb-2 block">
-                            Standerton, Sakhile
+                            {{ shop.city }}, {{ shop.address.split(',')[0] if shop.address else 'Standerton' }}
                         </span>
-                        <!-- Shop Name Wrapper -->
-                        <h2 class="shop-name text-2xl font-semibold text-mil-dark leading-tight">Sipho's General Dealer
-                        </h2>
+                        <h2 class="shop-name text-2xl font-semibold text-mil-dark leading-tight">{{ shop.name }}</h2>
+                        <span class="text-[11px] uppercase tracking-[1px] font-bold text-mil-accent mt-2 block">
+                            Managed by {{ shop.manager_name }}
+                        </span>
                     </div>
 
-                    <!-- Description -->
-                    <p class="text-sm text-mil-softDark line-clamp-3 mb-8 flex-1 leading-relaxed">Fresh bread, maize
-                        meal, daily essentials, and cold drinks. Serving the neighborhood reliably.</p>
+                    <p class="text-sm text-mil-softDark line-clamp-3 mb-8 flex-1 leading-relaxed">
+                        {{ shop.description or 'A trusted community Spaza shop providing fresh essentials and friendly
+                        service.' }}
+                    </p>
 
-                    <!-- Call-to-action Button (Portfolio style) -->
-                    <a href="#"
+                    <a href="{{ url_for('main.shop_detail', shop_name=shop.slug) }}"
                         class="mil-button mt-auto inline-flex items-center justify-between w-full h-[60px] pl-6 pr-2 bg-mil-accent text-mil-dark text-[11px] uppercase tracking-[2px] font-semibold rounded-full hover:brightness-105 transition-all group">
                         <span>View Products</span>
                         <div
@@ -69,85 +80,12 @@
                     </a>
                 </div>
             </div>
-
-            <!-- Sample Spaza Shop Card 2 -->
-            <div
-                class="shop-card bg-mil-light rounded-none border border-mil-border flex flex-col transition-all hover:shadow-[0_10px_30px_rgba(0,0,0,0.05)] hover:-translate-y-1">
-                <!-- Placeholder Image -->
-                <div class="h-48 bg-mil-softBg relative w-full flex items-center justify-center overflow-hidden group">
-                    <!-- Abstract placeholder shape -->
-                    <svg class="w-12 h-12 text-mil-border transform group-hover:scale-110 transition-transform duration-500"
-                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                            d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                </div>
-
-                <div class="p-8 flex flex-col flex-1">
-                    <div class="mb-4">
-                        <span class="text-[10px] uppercase tracking-[2px] font-bold text-mil-softDark mb-2 block">
-                            Standerton Central
-                        </span>
-                        <h2 class="shop-name text-2xl font-semibold text-mil-dark leading-tight">Mama Joy's Tuckshop
-                        </h2>
-                    </div>
-
-                    <p class="text-sm text-mil-softDark line-clamp-3 mb-8 flex-1 leading-relaxed">Airtime, snacks,
-                        electricity tokens, and household supplies. Always open late!</p>
-
-                    <a href="#"
-                        class="mil-button mt-auto inline-flex items-center justify-between w-full h-[60px] pl-6 pr-2 bg-mil-accent text-mil-dark text-[11px] uppercase tracking-[2px] font-semibold rounded-full hover:brightness-105 transition-all group">
-                        <span>View Products</span>
-                        <div
-                            class="w-10 h-10 rounded-full bg-mil-dark flex items-center justify-center opacity-90 group-hover:scale-110 transition-transform">
-                            <svg class="w-4 h-4 text-mil-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                            </svg>
-                        </div>
-                    </a>
-                </div>
+            {% endfor %}
+            {% else %}
+            <div class="col-span-full py-20 text-center">
+                <p class="text-mil-softDark text-lg">No shops found in this area yet.</p>
             </div>
-
-            <!-- Sample Spaza Shop Card 3 -->
-            <div
-                class="shop-card bg-mil-light rounded-none border border-mil-border flex flex-col transition-all hover:shadow-[0_10px_30px_rgba(0,0,0,0.05)] hover:-translate-y-1">
-                <!-- Placeholder Image -->
-                <div class="h-48 bg-mil-softBg relative w-full flex items-center justify-center overflow-hidden group">
-                    <!-- Abstract placeholder shape -->
-                    <svg class="w-12 h-12 text-mil-border transform group-hover:scale-110 transition-transform duration-500"
-                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                            d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-                    </svg>
-                </div>
-
-                <div class="p-8 flex flex-col flex-1">
-                    <div class="mb-4">
-                        <span class="text-[10px] uppercase tracking-[2px] font-bold text-mil-softDark mb-2 block">
-                            Standerton, Meyerville
-                        </span>
-                        <h2 class="shop-name text-2xl font-semibold text-mil-dark leading-tight">Khanya's Mini Market
-                        </h2>
-                    </div>
-
-                    <p class="text-sm text-mil-softDark line-clamp-3 mb-8 flex-1 leading-relaxed">Bulk groceries,
-                        affordable household cleaning products, and fresh produce delivered daily.</p>
-
-                    <a href="#"
-                        class="mil-button mt-auto inline-flex items-center justify-between w-full h-[60px] pl-6 pr-2 bg-mil-accent text-mil-dark text-[11px] uppercase tracking-[2px] font-semibold rounded-full hover:brightness-105 transition-all group">
-                        <span>View Products</span>
-                        <div
-                            class="w-10 h-10 rounded-full bg-mil-dark flex items-center justify-center opacity-90 group-hover:scale-110 transition-transform">
-                            <svg class="w-4 h-4 text-mil-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                            </svg>
-                        </div>
-                    </a>
-                </div>
-            </div>
-
+            {% endif %}
         </div>
     </div>
 </section>

@@ -69,7 +69,31 @@
                     </div>
                     <h3 class="text-[11px] font-bold text-mil-dark uppercase tracking-[2px]">Hours</h3>
                 </div>
-                <p class="text-base text-mil-dark font-medium">{{ shop.opening_hours }}</p>
+                <div class="text-sm text-mil-dark space-y-1">
+                    <script>
+                        (function () {
+                            try {
+                                const raw = {{ (shop.opening_hours or '{}')| safe
+                            }};
+                        const hours = typeof raw === 'string' ? JSON.parse(raw) : raw;
+                        const mapping = {
+                            'mon-fri': 'Mon - Fri',
+                            'sat-sun': 'Sat - Sun',
+                            'holidays': 'Holidays'
+                        };
+                        let html = '';
+                        for (const [id, label] of Object.entries(mapping)) {
+                            if (hours[id] && hours[id].open && hours[id].close) {
+                                html += `<p class="flex justify-between"><span class="font-bold text-mil-softDark mr-4">${label}:</span> <span>${hours[id].open} - ${hours[id].close}</span></p>`;
+                            }
+                        }
+                        document.write(html || '<p class="text-mil-softDark italic">Contact for hours</p>');
+                            } catch (e) {
+                            document.write('<p class="text-mil-softDark italic">Contact for hours</p>');
+                        }
+                        }) ();
+                    </script>
+                </div>
             </div>
             <!-- Contact -->
             <div class="portfolio-card p-8 group">
@@ -97,14 +121,31 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {% for product in products %}
                 <div class="portfolio-card p-6 flex flex-row items-center justify-between group">
-                    <div class="flex-1">
-                        <h3 class="text-lg font-semibold text-mil-dark group-hover:text-mil-accent transition-colors">
-                            {{ product.name }}</h3>
-                        {% if product.category %}
-                        <span
-                            class="inline-block mt-2 text-[10px] uppercase tracking-[1px] text-mil-softDark bg-[rgba(0,0,0,0.03)] px-2 py-1 rounded">{{
-                            product.category }}</span>
-                        {% endif %}
+                    <div class="flex items-center gap-6 flex-1">
+                        <!-- Product Image -->
+                        <div
+                            class="w-20 h-20 bg-mil-softBg border border-mil-border flex items-center justify-center overflow-hidden flex-shrink-0 group-hover:border-mil-accent transition-colors">
+                            {% if product.image_url %}
+                            <img src="{{ product.image_url }}" alt="{{ product.name }}"
+                                class="w-full h-full object-cover group-hover:scale-110 transition-transform">
+                            {% else %}
+                            <svg class="w-8 h-8 text-mil-border" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            {% endif %}
+                        </div>
+
+                        <div class="flex-1">
+                            <h3
+                                class="text-lg font-semibold text-mil-dark group-hover:text-mil-accent transition-colors">
+                                {{ product.name }}</h3>
+                            {% if product.category %}
+                            <span
+                                class="inline-block mt-2 text-[10px] uppercase tracking-[1px] text-mil-softDark bg-[rgba(0,0,0,0.03)] px-2 py-1 rounded">{{
+                                product.category }}</span>
+                            {% endif %}
+                        </div>
                     </div>
                     <div class="text-right flex flex-col items-end gap-2 ml-4">
                         <p class="text-xl font-bold text-mil-dark">R{{ "%.2f"|format(product.price) }}</p>
