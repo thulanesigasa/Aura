@@ -181,16 +181,14 @@ def admin_login():
 
 @bp.route("/admin/signup", methods=["GET", "POST"])
 def admin_signup():
-    """Signup for new shop owners."""
-    shops = _fetch_all_shops() # To let them pick their shop for now
-    
+    """Signup for new shop owners – creating a new shop automatically."""
     if request.method == "POST":
         email = request.form.get("email")
         password = request.form.get("password")
-        shop_id = request.form.get("shop_id")
+        shop_name = request.form.get("shop_name")
         
-        if not email or not password or not shop_id:
-            return render_template("signup.html", shops=shops, error="All fields are required")
+        if not email or not password or not shop_name:
+            return render_template("signup.html", error="All fields are required")
             
         db = get_db()
         cur = db.cursor()
@@ -199,10 +197,27 @@ def admin_signup():
         cur.execute("SELECT id FROM users WHERE email = %s;", (email,))
         if cur.fetchone():
             cur.close()
-            return render_template("signup.html", shops=shops, error="Email already registered")
+            return render_template("signup.html", error="Email already registered")
             
-        password_hash = generate_password_hash(password)
+        # Generate slug from shop name
+        import re
+        slug = re.sub(r'[^a-zA-Z0-9]', '-', shop_name.lower()).strip('-')
+        # Ensure slug unique (basic check/append tail)
+        cur.execute("SELECT id FROM shops WHERE slug = %s;", (slug,))
+        if cur.fetchone():
+            import time
+            slug = f"{slug}-{int(time.time() % 1000)}"
+
         try:
+            # 1. Create the Shop
+            cur.execute(
+                "INSERT INTO shops (name, slug, city, province) VALUES (%s, %s, %s, %s) RETURNING id;",
+                (shop_name, slug, "Standerton", "Mpumalanga")
+            )
+            shop_id = cur.fetchone()[0]
+            
+            # 2. Create the User
+            password_hash = generate_password_hash(password)
             cur.execute(
                 "INSERT INTO users (shop_id, email, password_hash) VALUES (%s, %s, %s) RETURNING id;",
                 (shop_id, email, password_hash)
@@ -211,13 +226,12 @@ def admin_signup():
             cur.close()
             
             session["user_id"] = user_id
-            session["shop_id"] = int(shop_id)
-            shop = _fetch_shop_by_id(int(shop_id))
-            return redirect(url_for("main.admin_dashboard", shop_name=shop["slug"]))
+            session["shop_id"] = shop_id
+            return redirect(url_for("main.admin_dashboard", shop_name=slug))
         except Exception as e:
-            return render_template("signup.html", shops=shops, error=f"Regiration failed: {e}")
+            return render_template("signup.html", error=f"Registration failed: {e}")
             
-    return render_template("signup.html", shops=shops)
+    return render_template("signup.html")
 
 
 @bp.route("/admin/logout")
