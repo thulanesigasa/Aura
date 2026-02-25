@@ -82,6 +82,48 @@
                     </div>
                     {% endfor %}
                 </div>
+
+                <!-- API Settings -->
+                <div class="mt-12 pt-12 border-t border-white/10">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-10 h-10 rounded-full bg-mil-accent/10 flex items-center justify-center">
+                            <svg class="w-5 h-5 text-mil-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                    d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                            </svg>
+                        </div>
+                        <h3 class="text-[11px] font-bold text-white uppercase tracking-[2px]">API Settings</h3>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="flex flex-col gap-2">
+                            <label
+                                class="text-[10px] uppercase tracking-[1px] font-bold text-[rgba(255,255,255,0.4)]">Unsplash
+                                Access Key</label>
+                            <div class="relative">
+                                <input type="password" id="unsplash-api-key" placeholder="Paste your key here..."
+                                    class="w-full bg-white/10 border border-white/5 rounded px-4 py-3 text-xs text-white focus:outline-none focus:border-mil-accent transition-all pr-10">
+                                <button onclick="toggleApiKeyVisibility()"
+                                    class="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white transition-colors">
+                                    <svg id="key-toggle-icon" class="w-4 h-4" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                            style="stroke-linecap:round;stroke-linejoin:round;stroke-width:2" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <p class="text-[9px] text-[rgba(255,255,255,0.3)] mt-1">Get your free key at
+                                unsplash.com/developers</p>
+                        </div>
+                        <button onclick="saveApiSettings()" id="save-api-btn"
+                            class="w-full py-3 bg-[rgba(255,255,255,0.05)] hover:bg-mil-accent text-white text-[10px] uppercase tracking-[2px] font-bold rounded-full transition-all border border-white/5">
+                            Save Settings
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -153,9 +195,9 @@
                     <!-- Actions (Small) -->
                     <div class="flex items-center gap-3 pr-6 border-r border-mil-border">
                         <button
-                            onclick="openEditModal({{ product.id }}, {{ product.name|tojson }}, {{ product.price }}, {{ product.category|tojson }}, {{ product.image_url|tojson }})"
+                            onclick="openEditModal({{ product.id }}, {{ product.name|tojson }}, {{ product.price }}, {{ product.category|tojson if product.category else 'None'|tojson }}, {{ product.image_url|tojson if product.image_url else ''|tojson }})"
                             class="text-[10px] uppercase tracking-[1.5px] font-bold text-mil-softDark hover:text-mil-accent transition-all">Edit</button>
-                        <button onclick="deleteProduct({{ product.id }})"
+                        <button onclick="openDeleteModal({{ product.id }})"
                             class="text-[10px] uppercase tracking-[1.5px] font-bold text-red-400 hover:text-red-600 transition-colors">Delete</button>
                     </div>
 
@@ -532,41 +574,59 @@
         'toothpaste': 'https://images.unsplash.com/photo-1559591937-e620a3221e44?w=400&auto=format&fit=crop'
     };
 
+    let suggestionTimeout = null;
+
     function suggestImages(query) {
-        const container = document.getElementById('image-suggestions');
-        const grid = document.getElementById('suggestions-grid');
+        clearTimeout(suggestionTimeout);
         const q = query.toLowerCase().trim();
+        const container = document.getElementById('image-suggestions');
 
         if (q.length < 2) {
             container.classList.add('hidden');
             return;
         }
 
-        const matches = Object.entries(IMAGE_COLLECTION).filter(([key]) => key.includes(q));
-
-        if (matches.length > 0) {
+        // Debounce API calls for 500ms
+        suggestionTimeout = setTimeout(async () => {
+            const grid = document.getElementById('suggestions-grid');
             grid.innerHTML = '';
-            matches.forEach(([key, url]) => {
-                const div = document.createElement('div');
-                div.className = 'image-suggest-item flex-shrink-0 cursor-pointer group relative aspect-square rounded-2xl overflow-hidden border-4 border-transparent hover:border-mil-accent transition-all bg-mil-softBg shadow-sm hover:shadow-xl';
-                div.onclick = () => selectImage(url);
-                div.dataset.url = url;
-                div.innerHTML = `
-                    <img src="${url}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
-                    <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-2">
-                        <p class="text-[8px] text-white uppercase font-bold truncate">${key}</p>
-                    </div>
-                `;
-                grid.appendChild(div);
-            });
-            container.classList.remove('hidden');
 
-            // Check if current image matches any match
-            const currentUrl = document.getElementById('modal-image-url').value;
-            if (currentUrl) highlightSelectedImage(currentUrl);
-        } else {
-            container.classList.add('hidden');
-        }
+            // 1. Try Local Suggestions First (Instant)
+            const localMatches = Object.entries(IMAGE_COLLECTION).filter(([key]) => key.includes(q));
+            let results = localMatches.map(([key, url]) => ({ id: key, url, name: key }));
+
+            // 2. Try Dynamic Unsplash if API Key exists
+            if (localStorage.getItem('aura_unsplash_key')) {
+                const apiResults = await fetchUnsplashImages(q);
+                if (apiResults) results = [...results, ...apiResults];
+            }
+
+            if (results.length > 0) {
+                // Remove duplicates by URL
+                const uniqueResults = results.filter((obj, pos, arr) => arr.map(mapObj => mapObj.url).indexOf(obj.url) === pos);
+
+                grid.innerHTML = '';
+                uniqueResults.forEach(img => {
+                    const div = document.createElement('div');
+                    div.className = 'image-suggest-item flex-shrink-0 cursor-pointer group relative aspect-square rounded-2xl overflow-hidden border-4 border-transparent hover:border-mil-accent transition-all bg-mil-softBg shadow-sm hover:shadow-xl';
+                    div.onclick = () => selectImage(img.url);
+                    div.dataset.url = img.url;
+                    div.innerHTML = `
+                        <img src="${img.url}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                        <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-2">
+                            <p class="text-[8px] text-white uppercase font-bold truncate">${img.name}</p>
+                        </div>
+                    `;
+                    grid.appendChild(div);
+                });
+                container.classList.remove('hidden');
+
+                const currentUrl = document.getElementById('modal-image-url').value;
+                if (currentUrl) highlightSelectedImage(currentUrl);
+            } else {
+                container.classList.add('hidden');
+            }
+        }, 500);
     }
 
     function highlightSelectedImage(url) {
@@ -688,8 +748,62 @@
         document.getElementById('time-picker-modal').classList.add('hidden');
     }
 
+    // --- API Settings Persistence ---
+    function saveApiSettings() {
+        const key = document.getElementById('unsplash-api-key').value.trim();
+        const btn = document.getElementById('save-api-btn');
+        localStorage.setItem('aura_unsplash_key', key);
+        btn.textContent = 'Settings Saved!';
+        btn.classList.add('bg-mil-accent');
+        btn.classList.remove('bg-[rgba(255,255,255,0.05)]');
+        setTimeout(() => {
+            btn.textContent = 'Save Settings';
+            btn.classList.remove('bg-mil-accent');
+            btn.classList.add('bg-[rgba(255,255,255,0.05)]');
+        }, 1500);
+    }
+
+    function loadApiSettings() {
+        const savedKey = localStorage.getItem('aura_unsplash_key');
+        if (savedKey) document.getElementById('unsplash-api-key').value = savedKey;
+    }
+
+    function toggleApiKeyVisibility() {
+        const input = document.getElementById('unsplash-api-key');
+        const icon = document.getElementById('key-toggle-icon');
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />`;
+        } else {
+            input.type = 'password';
+            icon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />`;
+        }
+    }
+
+    // --- Dynamic Unsplash Fetching ---
+    async function fetchUnsplashImages(query) {
+        const key = localStorage.getItem('aura_unsplash_key');
+        if (!key) return null;
+
+        try {
+            const url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&client_id=${key}&per_page=9&orientation=squarish`;
+            const response = await fetch(url);
+            if (!response.ok) return null;
+            const data = await response.json();
+            return data.results.map(img => ({
+                id: img.id,
+                url: img.urls.regular,
+                name: img.alt_description || query
+            }));
+        } catch (err) {
+            console.error("Unsplash API Error:", err);
+            return null;
+        }
+    }
+
     // Load existing hours on startup
     window.addEventListener('DOMContentLoaded', () => {
+        loadApiSettings();
         try {
             // Using a safe parse for the JSON data passed from Flask
             const hours = {{ (shop.opening_hours or '{}') | safe }};
