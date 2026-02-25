@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{% block title %}Aura – Local Spaza Shops in Standerton{% endblock %}</title>
+    <meta name="description"
+        content="Discover and order from local Spaza shops in Standerton, Mpumalanga through the Aura platform.">
+
+    <!-- SEO Canonical Tag referencing current request path -->
+    <link rel="canonical" href="{{ request.url }}">
+
+    <!-- Google Fonts: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100;200;300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                    },
+                    colors: {
+                        mil: {
+                            accent: '#FF9800',       /* Portfio Orange Accent */
+                            dark: '#000000',         /* Dark texts */
+                            softDark: 'rgba(0,0,0,0.5)',
+                            light: '#FFFFFF',
+                            softBg: '#F2F2F2',       /* Light grey background typical for such portfolios */
+                            border: 'rgba(0,0,0,0.1)'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <!-- JSON-LD LocalBusiness Schema for Standerton, Mpumalanga -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "LocalBusiness",
+        "name": "Aura Spaza Directory",
+        "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Standerton",
+            "addressRegion": "Mpumalanga",
+            "addressCountry": "ZA"
+        }
+    }
+    </script>
+
+    {% block extra_head %}{% endblock %}
+</head>
+
+<body class="bg-mil-softBg text-mil-softDark font-sans antialiased flex flex-col min-h-screen relative">
+
+    <!-- Mobile-first Navigation Bar (Dark Block) -->
+    <nav class="sticky top-0 z-50 bg-[#1a1a1a] shadow-sm">
+        <div class="px-4 py-4 flex flex-col gap-3">
+            <div class="flex items-center justify-between">
+                <a href="/" class="text-2xl font-bold text-mil-light flex items-center gap-1"
+                    style="font-weight: 600; letter-spacing: 1px;">
+                    Aura<span class="text-mil-accent">.</span>
+                </a>
+                <!-- Mobile menu icon -->
+                <button id="menuToggle"
+                    class="p-2 -mr-2 text-mil-light hover:text-mil-accent transition-colors focus:outline-none rounded-lg flex items-center justify-center min-h-[44px] min-w-[44px] relative z-[60]">
+                    <svg class="w-6 h-6 menu-icon-open" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                    <svg class="w-6 h-6 menu-icon-close hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Target for Task 1: Search input field with ID shopSearch -->
+            <div class="relative w-full mt-2">
+                <input type="text" id="shopSearch" placeholder="SEARCH SPAZA SHOPS..."
+                    class="w-full bg-transparent border-b border-[rgba(255,255,255,0.1)] py-0 pl-11 pr-4 text-[12px] font-medium uppercase tracking-[2px] text-mil-light focus:outline-none focus:border-mil-accent transition-all h-[50px] placeholder:text-[rgba(255,255,255,0.4)]">
+                <svg class="absolute left-2 top-1/2 -translate-y-1/2 w-5 h-5 text-[rgba(255,255,255,0.4)]" fill="none"
+                    stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+            </div>
+        </div>
+
+        <!-- Dropdown Menu -->
+        <div id="dropdownMenu"
+            class="absolute top-full left-0 w-full bg-[#1a1a1a] z-[40] border-[rgba(255,255,255,0.1)] menu-closed">
+            <nav class="flex flex-col items-center gap-6 text-center py-8">
+                <a href="/" class="text-xl font-bold text-mil-light hover:text-mil-accent transition-colors">Home</a>
+                <a href="/about" class="text-xl font-bold text-mil-light hover:text-mil-accent transition-colors">About
+                    Us</a>
+                <a href="/join" class="text-xl font-bold text-mil-light hover:text-mil-accent transition-colors">List
+                    Your Spaza</a>
+                <a href="/contact"
+                    class="text-xl font-bold text-mil-light hover:text-mil-accent transition-colors">Contact</a>
+            </nav>
+        </div>
+    </nav>
+
+    <!-- Removed fullscreen menu -->
+
+    <main class="flex-grow relative z-10 transition-transform duration-300" id="mainContent">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer (Dark Block) -->
+    <footer class="bg-[#1a1a1a] py-16 border-t border-[rgba(255,255,255,0.1)] mt-auto relative z-10">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-10">
+                <a href="/" class="text-3xl font-bold text-mil-light tracking-[1px] mb-6 md:mb-0">
+                    Aura<span class="text-mil-accent">.</span>
+                </a>
+                <div
+                    class="flex space-x-6 text-[12px] font-medium tracking-[2px] uppercase text-mil-light flex-wrap justify-center gap-y-4">
+                    <a href="/" class="hover:text-mil-accent transition-colors">Home</a>
+                    <a href="/contact" class="hover:text-mil-accent transition-colors">Contact</a>
+                    <a href="/join" class="hover:text-mil-accent transition-colors">Join</a>
+                </div>
+            </div>
+
+            <div class="w-full h-px bg-[rgba(255,255,255,0.1)] mb-10"></div>
+
+            <div class="flex flex-col md:flex-row justify-between items-center text-sm text-[rgba(255,255,255,0.6)]">
+                <p>&copy; 2026 Aura Platform. All rights reserved.</p>
+                <div class="flex space-x-6 mt-4 md:mt-0">
+                    <a href="/privacy" class="hover:text-mil-light transition-colors">Privacy Policy</a>
+                    <a href="/terms" class="hover:text-mil-light transition-colors">Terms of Service</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='main.js') }}"></script>
+</body>
+
+</html>

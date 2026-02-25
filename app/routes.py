@@ -93,7 +93,68 @@ def shop_detail(shop_name):
     )
 
 
-# ── SEO endpoints ────────────────────────────────────────────────────────────
+@bp.route("/privacy")
+def privacy():
+    return render_template("privacy.html")
+
+
+@bp.route("/terms")
+def terms():
+    return render_template("terms.html")
+
+
+@bp.route("/about")
+def about():
+    return render_template("about.html")
+
+
+@bp.route("/contact")
+def contact():
+    return render_template("contact.html")
+
+
+@bp.route("/join")
+def join():
+    return render_template("join.html")
+
+
+# ── Admin endpoints ──────────────────────────────────────────────────────────
+
+@bp.route("/admin/<shop_name>")
+def admin_dashboard(shop_name):
+    """Hidden admin dashboard for shop owners."""
+    shop = _fetch_shop_by_slug(shop_name)
+    if not shop:
+        abort(404)
+    products = _fetch_products_for_shop(shop["id"])
+    return render_template("admin.html", shop=shop, products=products)
+
+
+@bp.route("/admin/api/product/<int:product_id>/toggle", methods=["POST"])
+def toggle_product_stock(product_id):
+    """Toggle the in_stock boolean for a given product."""
+    try:
+        db = get_db()
+        cur = db.cursor()
+        
+        # Get current status
+        cur.execute("SELECT in_stock FROM products WHERE id = %s;", (product_id,))
+        row = cur.fetchone()
+        if not row:
+            return Response(json.dumps({"error": "Product not found"}), status=404, mimetype="application/json")
+            
+        new_status = not row[0]
+        
+        # Update status
+        cur.execute("UPDATE products SET in_stock = %s WHERE id = %s;", (new_status, product_id))
+        cur.close()
+        
+        return Response(json.dumps({"success": True, "in_stock": new_status}), status=200, mimetype="application/json")
+    except Exception as e:
+        return Response(json.dumps({"error": str(e)}), status=500, mimetype="application/json")
+
+
+# ── SEO endpoints ───────────────────────────────────────────────────────────
 
 @bp.route("/sitemap.xml")
 def sitemap():

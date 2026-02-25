@@ -1,0 +1,45 @@
+/* Global smooth scrolling behavior */
+html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Portfolio-style interactive hover animations */
+.portfolio-card {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform, box-shadow;
+}
+
+.portfolio-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+}
+
+/* Optimize touch targets across the app for mobile-first */
+button,
+a,
+input {
+    touch-action: manipulation;
+}
+
+/* Smooth Dropdown Animation */
+#dropdownMenu {
+    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease-in-out, transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: top;
+}
+
+#dropdownMenu.menu-closed {
+    max-height: 0;
+    opacity: 0;
+    transform: translateY(-10px);
+    pointer-events: none;
+}
+
+#dropdownMenu.menu-open {
+    max-height: 400px;
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}

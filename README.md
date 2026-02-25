@@ -29,6 +29,8 @@ Aura/
 │   └── templates/
 │       ├── index.html       # Homepage – shop grid
 │       ├── shop.html        # Shop detail + LocalBusiness schema
+│       ├── admin.html       # Hidden store owner dashboard
+│       ├── about.html       # Static pages (About, Contact, Join)
 │       └── 404.html         # Custom error page
 ├── Dockerfile               # python:3.11-slim + Gunicorn
 ├── docker-compose.yml       # Web + PostgreSQL services
@@ -57,6 +59,7 @@ The app will be available at **[http://localhost:8000](http://localhost:8000)**.
 |---------|-----|
 | Homepage | http://localhost:8000/ |
 | Shop detail | http://localhost:8000/shop/mama-zinzis-spaza |
+| Admin Dashboard | http://localhost:8000/admin/mama-zinzis-spaza |
 | Sitemap | http://localhost:8000/sitemap.xml |
 | Robots | http://localhost:8000/robots.txt |
 
@@ -84,6 +87,8 @@ docker compose down
 - `<link rel="canonical">` tags on every page
 - **JSON-LD `LocalBusiness` schema** on all shop pages
 - **JSON-LD `Organization` schema** on the homepage
+- **Secure Architecture:** Hidden admin dashboards for store owners under `/admin/<slug>`
+- **Responsive Navigation:** Portfolio-style retractable dropdown menu for optimal mobile UX
 - Dynamic `/sitemap.xml` (auto-updates as shops are added)
 - `/robots.txt` allowing full indexing with sitemap reference
 - Semantic HTML5 with descriptive meta descriptions

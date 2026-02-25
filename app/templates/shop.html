@@ -1,227 +1,132 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "base.html" %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ shop.name }} – Aura Spaza Shop</title>
-    <meta name="description" content="{{ shop.description }}">
-    <link rel="canonical" href="{{ base_url }}/shop/{{ shop.slug }}">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        aura: {
-                            900: '#0c0a1d', 800: '#13102b', 700: '#1b1738',
-                            600: '#231e46', 500: '#352f5e', 400: '#5b4f9e',
-                            300: '#8070d4', 200: '#b4a7f0', 100: '#ddd7fa', 50: '#f1eefe',
-                        },
-                        glow: { purple: '#a78bfa', pink: '#f472b6', cyan: '#22d3ee', green: '#34d399' }
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'system-ui', 'sans-serif'],
-                        display: ['Outfit', 'Inter', 'sans-serif'],
-                    },
-                    animation: {
-                        'slide-up': 'slideUp .6s ease-out both',
-                        'fade-in': 'fadeIn .8s ease-out both',
-                    },
-                    keyframes: {
-                        slideUp: { '0%': { transform: 'translateY(30px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } },
-                        fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
-                    },
-                }
-            }
-        }
-    </script>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap"
-        rel="stylesheet">
+{% block content %}
+<!-- Shop Hero (Dark Block) -->
+<header class="bg-[#1a1a1a] pt-20 pb-24 border-b border-[rgba(255,255,255,0.1)] relative z-10">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 animate-slide-up">
+        <!-- Image banner -->
+        <div
+            class="h-56 sm:h-72 bg-[rgba(255,255,255,0.05)] flex items-center justify-center overflow-hidden mb-12 border border-[rgba(255,255,255,0.1)]">
+            <svg class="w-16 h-16 text-[rgba(255,255,255,0.2)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                    d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" />
+            </svg>
+        </div>
 
-    <!-- JSON-LD LocalBusiness Schema -->
-    <script type="application/ld+json">{{ jsonld | safe }}</script>
-
-    <style>
-        .glass-card {
-            background: rgba(27, 23, 56, .6);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(167, 139, 250, .15);
-        }
-
-        .glass-card:hover {
-            background: rgba(35, 30, 70, .8);
-            border-color: rgba(167, 139, 250, .35);
-        }
-
-        .gradient-text {
-            background: linear-gradient(135deg, #a78bfa 0%, #f472b6 50%, #22d3ee 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .delivery-badge {
-            background: linear-gradient(135deg, #34d399, #22d3ee);
-        }
-
-        .bg-orb {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(80px);
-            opacity: .2;
-        }
-    </style>
-</head>
-
-<body class="bg-aura-900 text-white font-sans min-h-screen overflow-x-hidden">
-
-    <!-- Orbs -->
-    <div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div class="bg-orb w-96 h-96 bg-purple-600 top-[-10%] right-[-5%]"></div>
-        <div class="bg-orb w-64 h-64 bg-cyan-500 bottom-[20%] left-[5%]"></div>
+        <div class="flex flex-col md:flex-row md:items-start justify-between gap-6">
+            <div>
+                <h1 class="text-4xl md:text-5xl font-bold text-mil-light tracking-tight">{{ shop.name }}</h1>
+                <p class="text-[rgba(255,255,255,0.6)] mt-4 max-w-2xl text-lg leading-relaxed">{{ shop.description }}
+                </p>
+            </div>
+            {% if shop.is_delivery %}
+            <span
+                class="md:mt-2 inline-flex items-center px-4 py-2 bg-[rgba(255,152,0,0.1)] border border-mil-accent text-mil-accent text-xs uppercase tracking-[2px] font-semibold rounded-full">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                Delivery Available
+            </span>
+            {% endif %}
+        </div>
     </div>
+</header>
 
-    <!-- Nav -->
-    <nav class="relative z-50 border-b border-aura-700/50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <a href="/" class="flex items-center gap-3 group">
+<!-- Shop Info & Products (Soft Light Block) -->
+<section class="bg-mil-softBg py-20 relative z-10">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+
+        <!-- Info Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-20 animate-slide-up" style="animation-delay:.12s">
+            <!-- Location -->
+            <div class="portfolio-card p-8 group">
+                <div class="flex items-center gap-4 mb-4">
                     <div
-                        class="w-10 h-10 rounded-xl bg-gradient-to-br from-glow-purple to-glow-pink flex items-center justify-center shadow-lg shadow-purple-500/20">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        class="w-12 h-12 rounded-full bg-[rgba(0,0,0,0.05)] flex items-center justify-center group-hover:bg-mil-accent transition-colors">
+                        <svg class="w-5 h-5 text-mil-dark group-hover:text-white transition-colors" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                         </svg>
                     </div>
-                    <span class="text-xl font-display font-bold gradient-text">Aura</span>
-                </a>
-                <a href="/" class="text-sm text-aura-200 hover:text-white transition-colors flex items-center gap-1">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                    </svg>
-                    Back to Shops
-                </a>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Shop Hero -->
-    <header class="relative z-10 pt-10 pb-6">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 animate-slide-up">
-            <!-- Image banner -->
-            <div
-                class="h-56 sm:h-72 rounded-2xl bg-gradient-to-br from-aura-600 to-aura-700 flex items-center justify-center overflow-hidden mb-8">
-                <svg class="w-24 h-24 text-aura-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                        d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" />
-                </svg>
-            </div>
-
-            <div class="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                    <h1 class="text-3xl sm:text-4xl font-display font-extrabold">{{ shop.name }}</h1>
-                    <p class="text-aura-300 mt-2 max-w-xl">{{ shop.description }}</p>
+                    <h3 class="text-[11px] font-bold text-mil-dark uppercase tracking-[2px]">Location</h3>
                 </div>
-                {% if shop.is_delivery %}
-                <span
-                    class="delivery-badge px-4 py-1.5 rounded-full text-sm font-semibold text-aura-900 shadow-lg flex items-center gap-1">
-                    🚴 Delivery Available
-                </span>
-                {% endif %}
+                <p class="text-base text-mil-dark font-medium">{{ shop.address }}</p>
+                <p class="text-sm text-mil-softDark mt-2">{{ shop.city }}, {{ shop.province }} {{ shop.postal_code }}
+                </p>
             </div>
-        </div>
-    </header>
-
-    <!-- Shop Info Cards -->
-    <section class="relative z-10 pb-12">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10 animate-slide-up" style="animation-delay:.12s">
-                <!-- Location -->
-                <div class="glass-card rounded-xl p-5">
-                    <div class="flex items-center gap-3 mb-2">
-                        <div class="w-8 h-8 rounded-lg bg-glow-purple/10 flex items-center justify-center">
-                            <svg class="w-4 h-4 text-glow-purple" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                            </svg>
-                        </div>
-                        <h3 class="text-xs font-medium text-aura-400 uppercase tracking-wider">Location</h3>
-                    </div>
-                    <p class="text-sm text-white">{{ shop.address }}</p>
-                    <p class="text-xs text-aura-300 mt-1">{{ shop.city }}, {{ shop.province }} {{ shop.postal_code }}
-                    </p>
-                </div>
-                <!-- Hours -->
-                <div class="glass-card rounded-xl p-5">
-                    <div class="flex items-center gap-3 mb-2">
-                        <div class="w-8 h-8 rounded-lg bg-glow-pink/10 flex items-center justify-center">
-                            <svg class="w-4 h-4 text-glow-pink" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        </div>
-                        <h3 class="text-xs font-medium text-aura-400 uppercase tracking-wider">Hours</h3>
-                    </div>
-                    <p class="text-sm text-white">{{ shop.opening_hours }}</p>
-                </div>
-                <!-- Contact -->
-                <div class="glass-card rounded-xl p-5">
-                    <div class="flex items-center gap-3 mb-2">
-                        <div class="w-8 h-8 rounded-lg bg-glow-cyan/10 flex items-center justify-center">
-                            <svg class="w-4 h-4 text-glow-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                            </svg>
-                        </div>
-                        <h3 class="text-xs font-medium text-aura-400 uppercase tracking-wider">Contact</h3>
-                    </div>
-                    <p class="text-sm text-white">{{ shop.phone }}</p>
-                </div>
-            </div>
-
-            <!-- Products -->
-            <div class="animate-slide-up" style="animation-delay:.24s">
-                <h2 class="text-2xl font-display font-bold mb-6"><span class="gradient-text">Products</span></h2>
-                {% if products %}
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {% for product in products %}
+            <!-- Hours -->
+            <div class="portfolio-card p-8 group">
+                <div class="flex items-center gap-4 mb-4">
                     <div
-                        class="glass-card rounded-xl p-5 flex items-center justify-between group hover:-translate-y-0.5 transition-all duration-200">
-                        <div>
-                            <h3 class="text-sm font-semibold text-white group-hover:text-glow-purple transition-colors">
-                                {{ product.name }}</h3>
-                            {% if product.category %}
-                            <span class="text-xs text-aura-400">{{ product.category }}</span>
-                            {% endif %}
-                        </div>
-                        <div class="text-right">
-                            <p class="text-sm font-bold gradient-text">R{{ "%.2f"|format(product.price) }}</p>
-                            {% if product.in_stock %}
-                            <span class="text-xs text-glow-green">In Stock</span>
-                            {% else %}
-                            <span class="text-xs text-red-400">Out of Stock</span>
-                            {% endif %}
-                        </div>
+                        class="w-12 h-12 rounded-full bg-[rgba(0,0,0,0.05)] flex items-center justify-center group-hover:bg-mil-accent transition-colors">
+                        <svg class="w-5 h-5 text-mil-dark group-hover:text-white transition-colors" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
                     </div>
-                    {% endfor %}
+                    <h3 class="text-[11px] font-bold text-mil-dark uppercase tracking-[2px]">Hours</h3>
                 </div>
-                {% else %}
-                <div class="glass-card rounded-xl p-8 text-center">
-                    <p class="text-aura-300">No products listed yet. Check back soon!</p>
+                <p class="text-base text-mil-dark font-medium">{{ shop.opening_hours }}</p>
+            </div>
+            <!-- Contact -->
+            <div class="portfolio-card p-8 group">
+                <div class="flex items-center gap-4 mb-4">
+                    <div
+                        class="w-12 h-12 rounded-full bg-[rgba(0,0,0,0.05)] flex items-center justify-center group-hover:bg-mil-accent transition-colors">
+                        <svg class="w-5 h-5 text-mil-dark group-hover:text-white transition-colors" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-[11px] font-bold text-mil-dark uppercase tracking-[2px]">Contact</h3>
                 </div>
-                {% endif %}
+                <p class="text-base text-mil-dark font-medium">{{ shop.phone }}</p>
             </div>
         </div>
-    </section>
 
-    <!-- Footer -->
-    <footer class="relative z-10 border-t border-aura-700/30 py-8">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <p class="text-xs text-aura-400">&copy; 2026 Aura. Empowering local communities across South Africa.</p>
+        <!-- Products -->
+        <div class="animate-slide-up" style="animation-delay:.24s">
+            <div class="mb-10 flex items-center justify-between border-b border-mil-border pb-4">
+                <h2 class="text-3xl font-bold text-mil-dark">Available <span class="font-light">Products</span></h2>
+            </div>
+            {% if products %}
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {% for product in products %}
+                <div class="portfolio-card p-6 flex flex-row items-center justify-between group">
+                    <div class="flex-1">
+                        <h3 class="text-lg font-semibold text-mil-dark group-hover:text-mil-accent transition-colors">
+                            {{ product.name }}</h3>
+                        {% if product.category %}
+                        <span
+                            class="inline-block mt-2 text-[10px] uppercase tracking-[1px] text-mil-softDark bg-[rgba(0,0,0,0.03)] px-2 py-1 rounded">{{
+                            product.category }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="text-right flex flex-col items-end gap-2 ml-4">
+                        <p class="text-xl font-bold text-mil-dark">R{{ "%.2f"|format(product.price) }}</p>
+                        {% if product.in_stock %}
+                        <span
+                            class="text-[10px] uppercase tracking-[1px] font-semibold text-green-600 bg-green-50 px-2 py-1 rounded border border-green-200">In
+                            Stock</span>
+                        {% else %}
+                        <span
+                            class="text-[10px] uppercase tracking-[1px] font-semibold text-red-600 bg-red-50 px-2 py-1 rounded border border-red-200">Out
+                            of Stock</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="bg-white border border-mil-border p-12 text-center rounded-none shadow-sm">
+                <p class="text-mil-softDark text-lg">No products listed yet. Check back soon!</p>
+            </div>
+            {% endif %}
         </div>
-    </footer>
-</body>
-
-</html>
+    </div>
+</section>
+{% endblock %}

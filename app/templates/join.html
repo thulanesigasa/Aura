@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Join as Spaza Owner | Aura{% endblock %}
+
+{% block content %}
+<section class="bg-[#1a1a1a] pt-20 pb-24 border-b border-[rgba(255,255,255,0.1)] relative z-10">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center animate-slide-up">
+        <h1 class="text-4xl md:text-5xl font-bold text-mil-light tracking-tight mb-6">List Your <span
+                class="text-mil-accent font-light">Spaza</span></h1>
+        <p class="text-lg text-[rgba(255,255,255,0.6)]">Expand your reach and serve the community better.</p>
+    </div>
+</section>
+
+<section class="bg-mil-softBg py-20 relative z-10">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="bg-white border border-mil-border p-8 md:p-12 shadow-sm animate-slide-up"
+            style="animation-delay:.12s text-center">
+
+            <div class="max-w-2xl mx-auto text-center mb-12">
+                <h2 class="text-3xl font-bold text-mil-dark mb-4">Why Join Aura?</h2>
+                <p class="text-mil-softDark leading-relaxed">By listing your shop on Aura, you make it easy for locals
+                    to find your store, see what products you have in stock, and discover your contact information and
+                    operating hours. It's completely free to join our directory.</p>
+            </div>
+
+            <form action="#" method="POST" class="max-w-2xl mx-auto flex flex-col gap-6 text-left">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="shop_name"
+                            class="block text-[10px] uppercase tracking-[2px] font-bold text-mil-softDark mb-2">Shop
+                            Name</label>
+                        <input type="text" id="shop_name" name="shop_name" required
+                            class="w-full bg-mil-softBg border-b border-mil-border py-3 px-4 text-mil-dark focus:outline-none focus:border-mil-accent transition-all">
+                    </div>
+                    <div>
+                        <label for="owner_name"
+                            class="block text-[10px] uppercase tracking-[2px] font-bold text-mil-softDark mb-2">Owner
+                            Name</label>
+                        <input type="text" id="owner_name" name="owner_name" required
+                            class="w-full bg-mil-softBg border-b border-mil-border py-3 px-4 text-mil-dark focus:outline-none focus:border-mil-accent transition-all">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="address"
+                        class="block text-[10px] uppercase tracking-[2px] font-bold text-mil-softDark mb-2">Shop
+                        Address</label>
+                    <input type="text" id="address" name="address" required
+                        class="w-full bg-mil-softBg border-b border-mil-border py-3 px-4 text-mil-dark focus:outline-none focus:border-mil-accent transition-all">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="phone"
+                            class="block text-[10px] uppercase tracking-[2px] font-bold text-mil-softDark mb-2">Phone
+                            Number</label>
+                        <input type="tel" id="phone" name="phone" required
+                            class="w-full bg-mil-softBg border-b border-mil-border py-3 px-4 text-mil-dark focus:outline-none focus:border-mil-accent transition-all">
+                    </div>
+                    <div>
+                        <label for="email"
+                            class="block text-[10px] uppercase tracking-[2px] font-bold text-mil-softDark mb-2">Email
+                            (Optional)</label>
+                        <input type="email" id="email" name="email"
+                            class="w-full bg-mil-softBg border-b border-mil-border py-3 px-4 text-mil-dark focus:outline-none focus:border-mil-accent transition-all">
+                    </div>
+                </div>
+
+                <button type="submit"
+                    class="mil-button mt-6 inline-flex items-center justify-between h-[60px] pl-6 pr-2 bg-mil-accent text-mil-dark text-[11px] uppercase tracking-[2px] font-semibold rounded-full hover:brightness-105 transition-all group w-full max-w-xs mx-auto">
+                    <span>Submit Application</span>
+                    <div
+                        class="w-10 h-10 rounded-full bg-mil-dark flex items-center justify-center opacity-90 group-hover:scale-110 transition-transform">
+                        <svg class="w-4 h-4 text-mil-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                    </div>
+                </button>
+            </form>
+
+        </div>
+    </div>
+</section>
+{% endblock %}

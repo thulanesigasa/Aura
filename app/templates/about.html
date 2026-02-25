@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}About Us | Aura{% endblock %}
+
+{% block content %}
+<section class="bg-[#1a1a1a] pt-20 pb-24 border-b border-[rgba(255,255,255,0.1)] relative z-10">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center animate-slide-up">
+        <h1 class="text-4xl md:text-5xl font-bold text-mil-light tracking-tight mb-6">About <span
+                class="text-mil-accent font-light">Aura</span></h1>
+        <p class="text-lg text-[rgba(255,255,255,0.6)]">Empowering local Spaza shops in Standerton.</p>
+    </div>
+</section>
+
+<section class="bg-mil-softBg py-20 relative z-10">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center animate-slide-up" style="animation-delay:.12s">
+
+            <div
+                class="h-64 sm:h-80 bg-[rgba(0,0,0,0.05)] border border-mil-border flex items-center justify-center overflow-hidden">
+                <svg class="w-24 h-24 text-mil-accent opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+            </div>
+
+            <div>
+                <h2 class="text-3xl font-bold text-mil-dark mb-6">Connecting the Community</h2>
+                <p class="text-mil-softDark mb-6 leading-relaxed">
+                    Aura was founded with a simple mission: to bridge the digital gap for local Spaza shops in
+                    Standerton. We believe that neighborhood stores are the heartbeat of the community, and they deserve
+                    the same technological advantages as large retail chains.
+                </p>
+                <p class="text-mil-softDark mb-8 leading-relaxed">
+                    By providing a centralized platform, we make it easy for residents to discover nearby shops, check
+                    product availability, and support local business owners directly from their phones.
+                </p>
+
+                <a href="/join"
+                    class="mil-button inline-flex items-center justify-between h-[60px] pl-6 pr-2 bg-mil-accent text-mil-dark text-[11px] uppercase tracking-[2px] font-semibold rounded-full hover:brightness-105 transition-all group max-w-[200px]">
+                    <span>Join Our Network</span>
+                    <div
+                        class="w-10 h-10 rounded-full bg-mil-dark flex items-center justify-center opacity-90 group-hover:scale-110 transition-transform">
+                        <svg class="w-4 h-4 text-mil-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                    </div>
+                </a>
+            </div>
+
+        </div>
+    </div>
+</section>
+{% endblock %}

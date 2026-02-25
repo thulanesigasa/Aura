@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Contact Us | Aura{% endblock %}
+
+{% block content %}
+<section class="bg-[#1a1a1a] pt-20 pb-24 border-b border-[rgba(255,255,255,0.1)] relative z-10">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center animate-slide-up">
+        <h1 class="text-4xl md:text-5xl font-bold text-mil-light tracking-tight mb-6">Contact <span
+                class="text-mil-accent font-light">Us</span></h1>
+        <p class="text-lg text-[rgba(255,255,255,0.6)]">We'd love to hear from you.</p>
+    </div>
+</section>
+
+<section class="bg-mil-softBg py-20 relative z-10">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-12 animate-slide-up" style="animation-delay:.12s">
+
+            <!-- Contact Info -->
+            <div class="flex flex-col gap-8">
+                <div class="portfolio-card p-8">
+                    <h3 class="text-[11px] font-bold text-mil-dark uppercase tracking-[2px] mb-2">Our Office</h3>
+                    <p class="text-lg text-mil-softDark">Standerton Central<br>Mpumalanga, 2430<br>South Africa</p>
+                </div>
+
+                <div class="portfolio-card p-8">
+                    <h3 class="text-[11px] font-bold text-mil-dark uppercase tracking-[2px] mb-2">Email & Phone</h3>
+                    <p class="text-lg text-mil-softDark"><a href="mailto:hello@aura.co.za"
+                            class="hover:text-mil-accent transition-colors">hello@aura.co.za</a><br>+27 12 345 6789</p>
+                </div>
+            </div>
+
+            <!-- Contact Form -->
+            <div class="bg-white border border-mil-border p-8 shadow-sm">
+                <h2 class="text-2xl font-bold text-mil-dark mb-6">Send a Message</h2>
+                <form action="#" method="POST" class="flex flex-col gap-6">
+                    <div>
+                        <label for="name"
+                            class="block text-[10px] uppercase tracking-[2px] font-bold text-mil-softDark mb-2">Full
+                            Name</label>
+                        <input type="text" id="name" name="name" required
+                            class="w-full bg-mil-softBg border-b border-mil-border py-3 px-4 text-mil-dark focus:outline-none focus:border-mil-accent transition-all">
+                    </div>
+                    <div>
+                        <label for="email"
+                            class="block text-[10px] uppercase tracking-[2px] font-bold text-mil-softDark mb-2">Email
+                            Address</label>
+                        <input type="email" id="email" name="email" required
+                            class="w-full bg-mil-softBg border-b border-mil-border py-3 px-4 text-mil-dark focus:outline-none focus:border-mil-accent transition-all">
+                    </div>
+                    <div>
+                        <label for="message"
+                            class="block text-[10px] uppercase tracking-[2px] font-bold text-mil-softDark mb-2">Message</label>
+                        <textarea id="message" name="message" rows="4" required
+                            class="w-full bg-mil-softBg border-b border-mil-border py-3 px-4 text-mil-dark focus:outline-none focus:border-mil-accent transition-all resize-none"></textarea>
+                    </div>
+                    <button type="submit"
+                        class="mil-button inline-flex items-center justify-between h-[60px] pl-6 pr-2 bg-mil-dark text-mil-light text-[11px] uppercase tracking-[2px] font-semibold rounded-full hover:brightness-110 transition-all group w-full mt-2">
+                        <span>Send Message</span>
+                        <div
+                            class="w-10 h-10 rounded-full bg-mil-accent flex items-center justify-center opacity-90 group-hover:scale-110 transition-transform">
+                            <svg class="w-4 h-4 text-mil-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                            </svg>
+                        </div>
+                    </button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</section>
+{% endblock %}
