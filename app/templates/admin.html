@@ -55,8 +55,8 @@
                     <!-- Actions -->
                     <div class="flex items-center gap-2 mr-4 border-r border-mil-border pr-4">
                         <button
-                            onclick="openEditModal({{ product.id }}, '{{ product.name|replace("'", "\\'") }}', {{ product.price }}, '{{ product.category|replace("'", "\\'") }}')"
-                            class="text-[10px] uppercase tracking-[1px] font-bold text-mil-softDark hover:text-mil-accent transition-colors">Edit</button>
+                            onclick="openEditModal({{ product.id }}, {{ product.name|tojson }}, {{ product.price }}, {{ product.category|tojson }})"
+                            class="text-[10px] uppercase tracking-[1px] font-bold text-mil-softDark hover:text-mil-accent transition-all">Edit</button>
                         <button onclick="deleteProduct({{ product.id }})"
                             class="text-[10px] uppercase tracking-[1px] font-bold text-red-400 hover:text-red-600 transition-colors">Delete</button>
                     </div>
