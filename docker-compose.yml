@@ -6,8 +6,12 @@ services:
       context: ./nginx
     container_name: aura-proxy
     ports:
-      - "80:80"
-      - "443:443"
+      - "80:8080"
+      - "443:8443"
+    environment:
+      - BACKEND=http://web:8000
+      - NGINX_ALWAYS_TLS_REDIRECT=on
+      - MODSEC_RULE_ENGINE=On
     depends_on:
       - web
     restart: unless-stopped
