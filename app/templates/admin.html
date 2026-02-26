@@ -117,14 +117,12 @@
 
                     <!-- Image Preview on Card -->
                     <div
-                        class="w-16 h-16 bg-mil-softBg border border-mil-border flex items-center justify-center overflow-hidden flex-shrink-0">
+                        class="w-16 h-16 bg-mil-softBg border border-mil-border flex items-center justify-center overflow-hidden flex-shrink-0 rounded-xl">
                         {% if product.image_url %}
                         <img src="{{ product.image_url }}" alt="{{ product.name }}" class="w-full h-full object-cover">
                         {% else %}
-                        <svg class="w-6 h-6 text-mil-border" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
+                        <img src="https://api.dicebear.com/7.x/icons/svg?seed={{ product.name|urlencode }}&backgroundColor=f8faff"
+                            alt="{{ product.name }}" class="w-10 h-10 opacity-70">
                         {% endif %}
                     </div>
 
@@ -202,17 +200,25 @@
                     class="w-full bg-mil-softBg border-b border-mil-border py-3 px-4 focus:outline-none focus:border-mil-accent"
                     placeholder="e.g. Red Apples">
 
-                <!-- Premium Image Selection Grid (Woolies/Checkers inspired) -->
-                <div id="image-suggestions" class="mt-6 hidden animate-slide-up">
-                    <p
-                        class="text-[10px] uppercase tracking-[1.5px] font-bold text-mil-softDark mb-3 border-b border-mil-border pb-2">
-                        Suggested High-Quality Images</p>
-                    <div id="suggestions-grid"
-                        class="grid grid-cols-3 gap-3 max-h-[220px] overflow-y-auto pr-2 custom-scrollbar">
-                        <!-- Suggestions go here -->
+                <!-- Image Suggestions (Product Avatar) -->
+                <div id="image-suggestions" class="mt-4 hidden animate-fade-in">
+                    <label class="text-[10px] uppercase tracking-[1px] font-bold text-mil-softDark mb-2 block">Avatar
+                        Preview</label>
+                    <div class="flex items-center gap-4 bg-mil-softBg p-4 rounded-2xl border border-mil-border">
+                        <div
+                            class="w-16 h-16 bg-white rounded-xl border border-mil-border flex items-center justify-center overflow-hidden">
+                            <img id="preview-avatar" src="" class="w-full h-full p-2">
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-[11px] font-bold text-mil-dark">Auto-Generated Icon</p>
+                            <p class="text-[9px] text-mil-softDark mt-0.5">This icon is generated based on the product
+                                name.</p>
+                            <button type="button" onclick="useAvatar()"
+                                class="mt-1.5 text-[10px] uppercase tracking-[1px] font-bold text-mil-accent hover:brightness-110">Apply
+                                to Product</button>
+                        </div>
                     </div>
                 </div>
-
                 <!-- Hidden Image URL Placeholder -->
                 <input type="hidden" id="modal-image-url">
                 <div id="image-preview-container"
@@ -498,109 +504,42 @@
         }
     }
 
-    // --- Premium Image Selection Collection ---
-    const IMAGE_COLLECTION = {
-        'apple': 'https://images.unsplash.com/photo-1560806887-1e4cd0b6bcd6?w=400&auto=format&fit=crop',
-        'green apple': 'https://images.unsplash.com/photo-1610397648930-477b8c7f0943?w=400&auto=format&fit=crop',
-        'red apple': 'https://images.unsplash.com/photo-1570913149827-d2ac84ab3f9a?w=400&auto=format&fit=crop',
-        'milk': 'https://images.unsplash.com/photo-1563636619-e9107da4a1bb?w=400&auto=format&fit=crop',
-        'bread': 'https://images.unsplash.com/photo-1549931319-a545dcf3bc73?w=400&auto=format&fit=crop',
-        'eggs': 'https://images.unsplash.com/photo-1506976785307-8732e854ad03?w=400&auto=format&fit=crop',
-        'banana': 'https://images.unsplash.com/photo-1571771894821-ad99026?w=400&auto=format&fit=crop',
-        'orange': 'https://images.unsplash.com/photo-1547514701-42782101795e?w=400&auto=format&fit=crop',
-        'tomato': 'https://images.unsplash.com/photo-1518977676601-b53f02ac6d31?w=400&auto=format&fit=crop',
-        'potato': 'https://images.unsplash.com/photo-1518977676601-b53f02ac6d31?w=400&auto=format&fit=crop',
-        'carrot': 'https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=400&auto=format&fit=crop',
-        'onion': 'https://images.unsplash.com/photo-1508747703725-71977713d540?w=400&auto=format&fit=crop',
-        'garlic': 'https://images.unsplash.com/photo-1584992236310-6edddc08acff?w=400&auto=format&fit=crop',
-        'cheese': 'https://images.unsplash.com/photo-1486297678162-ad2a19b05840?w=400&auto=format&fit=crop',
-        'butter': 'https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?w=400&auto=format&fit=crop',
-        'yogurt': 'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400&auto=format&fit=crop',
-        'chicken': 'https://images.unsplash.com/photo-1587593810167-a84920ea0781?w=400&auto=format&fit=crop',
-        'beef': 'https://images.unsplash.com/photo-1603048588665-791ca8aea617?w=400&auto=format&fit=crop',
-        'fish': 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&auto=format&fit=crop',
-        'rice': 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400&auto=format&fit=crop',
-        'pasta': 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=400&auto=format&fit=crop',
-        'coffee': 'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=400&auto=format&fit=crop',
-        'tea': 'https://images.unsplash.com/photo-1544787210-2827448b3cd3?w=400&auto=format&fit=crop',
-        'water': 'https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=400&auto=format&fit=crop',
-        'juice': 'https://images.unsplash.com/photo-1621236304191-f5293290373c?w=400&auto=format&fit=crop',
-        'chips': 'https://images.unsplash.com/photo-1566478989037-eec170784d0b?w=400&auto=format&fit=crop',
-        'chocolate': 'https://images.unsplash.com/photo-1511381939415-e4401546383d?w=400&auto=format&fit=crop',
-        'detergent': 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=400&auto=format&fit=crop',
-        'soap': 'https://images.unsplash.com/photo-1605264964528-06403738d6dc?w=400&auto=format&fit=crop',
-        'toothpaste': 'https://images.unsplash.com/photo-1559591937-e620a3221e44?w=400&auto=format&fit=crop'
-    };
-
-    let suggestionTimeout = null;
-
+    // --- Product Avatar Logic (DiceBear) ---
     function suggestImages(query) {
-        clearTimeout(suggestionTimeout);
-        const q = query.toLowerCase().trim();
+        const q = query.trim();
         const container = document.getElementById('image-suggestions');
+        const previewImg = document.getElementById('modal-preview-img'); // Changed to modal-preview-img
 
         if (q.length < 2) {
             container.classList.add('hidden');
             return;
         }
 
-        // Debounce API calls for 500ms
-        suggestionTimeout = setTimeout(async () => {
-            const grid = document.getElementById('suggestions-grid');
-            grid.innerHTML = '';
-
-            // 1. Try Local Suggestions First (Instant)
-            const localMatches = Object.entries(IMAGE_COLLECTION).filter(([key]) => key.includes(q));
-            let results = localMatches.map(([key, url]) => ({ id: key, url, name: key }));
-
-            // 2. Try Dynamic Unsplash if API Key exists
-            const serverKey = "{{ unsplash_key or '' }}";
-            if (serverKey) {
-                const apiResults = await fetchUnsplashImages(q);
-                if (apiResults) results = [...results, ...apiResults];
-            }
-
-            if (results.length > 0) {
-                // Remove duplicates by URL
-                const uniqueResults = results.filter((obj, pos, arr) => arr.map(mapObj => mapObj.url).indexOf(obj.url) === pos);
-
-                grid.innerHTML = '';
-                uniqueResults.forEach(img => {
-                    const div = document.createElement('div');
-                    div.className = 'image-suggest-item flex-shrink-0 cursor-pointer group relative aspect-square rounded-2xl overflow-hidden border-4 border-transparent hover:border-mil-accent transition-all bg-mil-softBg shadow-sm hover:shadow-xl';
-                    div.onclick = () => selectImage(img.url);
-                    div.dataset.url = img.url;
-                    div.innerHTML = `
-                        <img src="${img.url}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
-                        <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-2">
-                            <p class="text-[8px] text-white uppercase font-bold truncate">${img.name}</p>
-                        </div>
-                    `;
-                    grid.appendChild(div);
-                });
-                container.classList.remove('hidden');
-
-                const currentUrl = document.getElementById('modal-image-url').value;
-                if (currentUrl) highlightSelectedImage(currentUrl);
-            } else {
-                container.classList.add('hidden');
-            }
-        }, 500);
+        // Generate DiceBear URL (using 'icons' style)
+        // This is a free, high-quality icon API perfect for food items
+        const avatarUrl = `https://api.dicebear.com/7.x/icons/svg?seed=${encodeURIComponent(q)}&backgroundColor=f8faff`;
+        previewImg.src = avatarUrl;
+        container.classList.remove('hidden');
+        document.getElementById('image-preview-container').classList.remove('hidden'); // Ensure preview container is visible
     }
 
-    function highlightSelectedImage(url) {
-        document.querySelectorAll('.image-suggest-item').forEach(item => {
-            const isSelected = item.dataset.url === url;
-            item.classList.toggle('border-mil-accent', isSelected);
-            item.classList.toggle('ring-4', isSelected);
-            item.classList.toggle('ring-mil-accent/30', isSelected);
-        });
-    }
+    function useAvatar() {
+        const previewImg = document.getElementById('modal-preview-img'); // Changed to modal-preview-img
+        if (previewImg.src) {
+            document.getElementById('modal-image-url').value = previewImg.src;
 
-    function selectImage(url) {
-        document.getElementById('modal-image-url').value = url;
-        showImagePreview(url);
-        highlightSelectedImage(url);
+            // Visual feedback
+            const btn = document.querySelector('#image-suggestions button'); // Assuming there's a button in image-suggestions
+            if (btn) { // Added check for button existence
+                const originalText = btn.innerText;
+                btn.innerText = "Applied!";
+                btn.classList.add('text-green-500');
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.classList.remove('text-green-500');
+                }, 2000);
+            }
+        }
     }
 
     function showImagePreview(url) {

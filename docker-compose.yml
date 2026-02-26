@@ -9,7 +9,6 @@ services:
     environment:
       - SECRET_KEY=aura-production-secret-change-me
       - DATABASE_URL=postgresql://aura_user:aura_pass@db:5432/aura_db
-      - UNSPLASH_ACCESS_KEY=${UNSPLASH_ACCESS_KEY:-}
     env_file:
       - .env
     depends_on:

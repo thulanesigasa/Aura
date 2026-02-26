@@ -411,8 +411,7 @@ def admin_dashboard(shop_name):
         "admin.html", 
         shop=shop, 
         products=products, 
-        user=user, 
-        unsplash_key=os.environ.get("UNSPLASH_ACCESS_KEY")
+        user=user
     )
 
 
