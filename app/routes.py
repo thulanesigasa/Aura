@@ -168,39 +168,34 @@ def api_checkout():
         if not items or not shop_id or not customer_name or not customer_phone or not delivery_address:
             return Response(json.dumps({"error": "Missing required fields"}), status=400, mimetype="application/json")
             
-        db = get_db()
-        cur = db.cursor()
+        # 1. Create main order
+        total = sum(float(item['price']) * int(item['quantity']) for item in items)
+        new_order = Order(
+            shop_id=shop_id,
+            customer_name=customer_name,
+            customer_phone=customer_phone,
+            delivery_address=delivery_address,
+            total=total,
+            status='pending'
+        )
+        db.session.add(new_order)
+        db.session.flush() # Get ID
         
-        # Start transaction
-        db.autocommit = False
-        
-        try:
-            # 1. Create main order
-            total = sum(float(item['price']) * int(item['quantity']) for item in items)
-            cur.execute(
-                "INSERT INTO orders (shop_id, customer_name, customer_phone, delivery_address, total, status) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id;",
-                (shop_id, customer_name, customer_phone, delivery_address, total, 'pending')
+        # 2. Create order items
+        for item in items:
+            new_item = OrderItem(
+                order_id=new_order.id,
+                product_id=item['product_id'],
+                quantity=item['quantity'],
+                price=item['price']
             )
-            order_id = cur.fetchone()[0]
-            
-            # 2. Create order items
-            for item in items:
-                cur.execute(
-                    "INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (%s, %s, %s, %s);",
-                    (order_id, item['product_id'], item['quantity'], item['price'])
-                )
-            
-            db.commit()
-            return Response(json.dumps({"success": True, "order_id": order_id}), status=201, mimetype="application/json")
-            
-        except Exception as e:
-            db.rollback()
-            raise e
-        finally:
-            db.autocommit = True
-            cur.close()
+            db.session.add(new_item)
+        
+        db.session.commit()
+        return Response(json.dumps({"success": True, "order_id": new_order.id}), status=201, mimetype="application/json")
             
     except Exception as e:
+        db.session.rollback()
         return Response(json.dumps({"error": str(e)}), status=500, mimetype="application/json")
 
 
@@ -213,40 +208,32 @@ def order_success(order_id):
 # ── Admin endpoints ──────────────────────────────────────────────────────────
 
 @bp.route("/admin/")
+@login_required
 def admin_root():
-    """Redirect /admin/ to dashboard or login."""
-    if "user_id" not in session:
-        return redirect(url_for("main.admin_login"))
-    
-    shop = _fetch_shop_by_id(session.get("shop_id"))
-    if not shop:
-        # Should not happen if data is consistent, but handle it
-        session.clear()
-        return redirect(url_for("main.admin_login"))
-        
-    return redirect(url_for("main.admin_dashboard", shop_name=shop["slug"]))
+    """Redirect /admin/ to dashboard."""
+    return redirect(url_for("main.admin_dashboard"))
 
 
 @bp.route("/admin/login", methods=["GET", "POST"])
 def admin_login():
-    """Login for shop owners."""
+    """Secure login with MFA support."""
     if request.method == "POST":
         email = request.form.get("email")
         password = request.form.get("password")
         
-        db = get_db()
-        cur = db.cursor()
-        cur.execute("SELECT id, shop_id, password_hash FROM users WHERE email = %s;", (email,))
-        user = cur.fetchone()
-        cur.close()
+        user = User.query.filter_by(email=email).first()
         
-        if user and check_password_hash(user[2], password):
-            session["user_id"] = user[0]
-            session["shop_id"] = user[1]
-            shop = _fetch_shop_by_id(user[1])
-            return redirect(url_for("main.admin_dashboard", shop_name=shop["slug"]))
+        if user and user.check_password(password):
+            if user.mfa_enabled:
+                # Store user ID in session for MFA verification
+                session['mfa_user_id'] = user.id
+                return redirect(url_for('main.mfa_verify'))
+            
+            login_user(user)
+            flash("Logged in successfully!", "success")
+            return redirect(url_for("main.admin_dashboard"))
         else:
-            return render_template("login.html", error="Invalid email or password")
+            flash("Invalid email or password.", "danger")
             
     return render_template("login.html")
 
@@ -517,39 +504,6 @@ def archive_product_api(product_id):
     return Response(json.dumps({"success": True, "is_archived": product.is_archived}), status=200, mimetype="application/json")
 
 
-@bp.route("/admin/logout")
-def admin_logout():
-    """Logout shop owner."""
-    session.clear()
-    return redirect(url_for("main.index"))
-
-
-@bp.route("/admin/<shop_name>")
-def admin_dashboard(shop_name):
-    """Hidden admin dashboard for shop owners."""
-    if "user_id" not in session:
-        return redirect(url_for("main.admin_login"))
-        
-    shop = _fetch_shop_by_slug(shop_name)
-    if not shop or shop["id"] != session.get("shop_id"):
-        abort(403) # Forbidden if trying to access other shop's admin
-        
-    products = _fetch_products_for_shop(shop["id"], include_archived=True)
-    
-    # Fetch User Profile Info
-    conn = get_db()
-    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cur.execute("SELECT first_name, last_name, email, phone FROM users WHERE id = %s", (session.get("user_id"),))
-    user = cur.fetchone()
-    
-    return render_template(
-        "admin.html", 
-        shop=shop, 
-        products=products, 
-        user=user
-    )
-
-
 # ── SEO & Static ─────────────────────────────────────────────────────────────
 
 @bp.route("/admin/api/shop/hours", methods=["POST"])
@@ -587,24 +541,6 @@ def sitemap():
 def robots():
     """Serve robots.txt."""
     return bp.send_static_file("robots.txt")
-
-
-# ── Static Info Pages ────────────────────────────────────────────────────────
-
-@bp.route("/privacy")
-def privacy(): return render_template("privacy.html")
-
-@bp.route("/terms")
-def terms(): return render_template("terms.html")
-
-@bp.route("/about")
-def about(): return render_template("about.html")
-
-@bp.route("/contact")
-def contact(): return render_template("contact.html")
-
-@bp.route("/join")
-def join(): return render_template("join.html")
 
 
 # ── Error handlers ───────────────────────────────────────────────────────────
