@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Verify MFA | Aura Security{% endblock %}
+
+{% block content %}
+<section class="bg-[#1a1a1a] pt-24 pb-20 border-b border-[rgba(255,255,255,0.1)] relative z-10">
+    <div class="max-w-md mx-auto px-4 text-center">
+        <h1 class="text-4xl font-bold text-mil-light tracking-tight mb-4">Identity <span
+                class="text-mil-accent font-light">Verification</span></h1>
+        <p class="text-lg text-[rgba(255,255,255,0.6)]">Your account is protected. Enter the code from your
+            authenticator app.</p>
+    </div>
+</section>
+
+<section class="bg-mil-softBg py-20 relative z-10 min-h-[600px]">
+    <div class="max-w-md mx-auto px-4">
+        <div class="bg-white border border-mil-border p-8 shadow-sm">
+            <form action="{{ url_for('main.mfa_verify') }}" method="POST" class="space-y-6">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div>
+                    <label for="token"
+                        class="block text-[11px] uppercase tracking-[2px] font-bold text-mil-dark mb-2 text-center">Authenticator
+                        Code</label>
+                    <input type="text" name="token" id="token" required autofocus placeholder="000 000" maxlength="6"
+                        class="w-full bg-mil-softBg border-b border-mil-border py-4 px-4 text-center text-3xl tracking-[10px] text-mil-dark font-bold focus:outline-none focus:border-mil-accent transition-all">
+                </div>
+
+                <div class="pt-4">
+                    <button type="submit"
+                        class="mil-button inline-flex items-center justify-between h-[55px] pl-6 pr-2 bg-mil-dark text-mil-light text-[12px] uppercase tracking-[2px] font-bold rounded-full hover:brightness-110 transition-all group w-full">
+                        <span>Verify & Login</span>
+                        <div
+                            class="w-10 h-10 rounded-full bg-mil-accent flex items-center justify-center opacity-90 group-hover:scale-110 transition-transform">
+                            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                            </svg>
+                        </div>
+                    </button>
+                </div>
+            </form>
+
+            <div class="mt-8 text-center text-xs text-mil-softDark">
+                <p>Lost access to your device? Contact system administrator.</p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

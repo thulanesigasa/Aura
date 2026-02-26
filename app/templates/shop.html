@@ -139,22 +139,42 @@
                             <h3
                                 class="text-lg font-semibold text-mil-dark group-hover:text-mil-accent transition-colors">
                                 {{ product.name }}</h3>
-                            {% if product.category %}
-                            <span
-                                class="inline-block mt-2 text-[10px] uppercase tracking-[1px] text-mil-softDark bg-[rgba(0,0,0,0.03)] px-2 py-1 rounded">{{
-                                product.category }}</span>
-                            {% endif %}
+                            <div class="flex items-center gap-3 mt-1">
+                                <p class="text-base font-bold text-mil-dark">R{{ "%.2f"|format(product.price) }}</p>
+                                {% if product.category %}
+                                <span
+                                    class="text-[9px] uppercase tracking-[1px] text-mil-softDark bg-[rgba(0,0,0,0.03)] px-2 py-1 rounded">{{
+                                    product.category }}</span>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
-                    <div class="text-right flex flex-col items-end gap-2 ml-4">
-                        <p class="text-xl font-bold text-mil-dark">R{{ "%.2f"|format(product.price) }}</p>
+
+                    <div class="text-right flex flex-col items-end gap-3 ml-4">
                         {% if product.in_stock %}
-                        <span
-                            class="text-[10px] uppercase tracking-[1px] font-semibold text-green-600 bg-green-50 px-2 py-1 rounded border border-green-200">In
-                            Stock</span>
+                        <!-- Add/Quantity Controls -->
+                        <div id="product-actions-{{ product.id }}"
+                            class="flex items-center bg-mil-dark rounded-full overflow-hidden transition-all h-10">
+                            <!-- Show "Add" if not in cart -->
+                            <button
+                                onclick="auraCart.addItem({{ product.id }}, {{ product.name|tojson|safe }}, {{ product.price }}, {{ shop.id }}, '{{ product.image_url if product.image_url else "
+                                https://api.dicebear.com/7.x/icons/svg?seed=" ~ product.name|urlencode ~ "
+                                &backgroundColor=f8faff" }}')"
+                                class="add-to-cart-btn px-6 py-2 text-white text-[10px] uppercase tracking-[2px] font-bold hover:bg-mil-accent transition-all">
+                                Add to Cart
+                            </button>
+                            <!-- Quantity selector (Hidden by default, shown via JS) -->
+                            <div class="qty-selector hidden items-center">
+                                <button onclick="auraCart.updateQuantity({{ product.id }}, -1)"
+                                    class="w-10 h-10 flex items-center justify-center text-white hover:bg-white/10 transition-all font-bold text-lg border-r border-white/5">-</button>
+                                <span class="qty-count text-white text-xs font-bold w-10 text-center">0</span>
+                                <button onclick="auraCart.updateQuantity({{ product.id }}, 1)"
+                                    class="w-10 h-10 flex items-center justify-center text-white hover:bg-white/10 transition-all font-bold text-lg border-l border-white/5">+</button>
+                            </div>
+                        </div>
                         {% else %}
                         <span
-                            class="text-[10px] uppercase tracking-[1px] font-semibold text-red-600 bg-red-50 px-2 py-1 rounded border border-red-200">Out
+                            class="text-[10px] uppercase tracking-[1px] font-semibold text-red-600 bg-red-50 px-3 py-1.5 rounded-full border border-red-200">Out
                             of Stock</span>
                         {% endif %}
                     </div>
@@ -169,4 +189,40 @@
         </div>
     </div>
 </section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function updateProductButtons() {
+        const cart = window.auraCart;
+        document.querySelectorAll('[id^="product-actions-"]').forEach(container => {
+            const productId = parseInt(container.id.replace('product-actions-', ''));
+            const item = cart.items.find(i => i.id === productId);
+
+            const addBtn = container.querySelector('.add-to-cart-btn');
+            const qtySelector = container.querySelector('.qty-selector');
+            const qtyCount = container.querySelector('.qty-count');
+
+            if (item) {
+                addBtn.classList.add('hidden');
+                qtySelector.classList.remove('hidden');
+                qtySelector.classList.add('flex');
+                qtyCount.textContent = item.quantity;
+                container.classList.add('bg-mil-accent');
+                container.classList.remove('bg-mil-dark');
+            } else {
+                addBtn.classList.remove('hidden');
+                qtySelector.classList.add('hidden');
+                qtySelector.classList.remove('flex');
+                container.classList.remove('bg-mil-accent');
+                container.classList.add('bg-mil-dark');
+            }
+        });
+    }
+
+    // Initial update
+    window.addEventListener('load', updateProductButtons);
+    // Listen for cart changes
+    window.addEventListener('aura-cart-updated', updateProductButtons);
+</script>
 {% endblock %}

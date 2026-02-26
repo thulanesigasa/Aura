@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="bg-[#1a1a1a] pt-20 pb-24 border-b border-white/10 relative z-10">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 animate-slide-up">
+        <h1 class="text-4xl md:text-6xl font-bold text-white tracking-tight mb-4">Complete <span
+                class="text-mil-accent font-light">Delivery</span></h1>
+        <p class="text-gray-400 text-lg max-w-2xl">Finalize your selection and tell us where to bring your order. No
+            login required.</p>
+    </div>
+</section>
+
+<section class="bg-mil-softBg py-20 relative z-10 min-h-[600px]">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-16">
+            <!-- Delivery Form -->
+            <div class="animate-slide-up" style="animation-delay: 0.1s;">
+                <h2
+                    class="text-[12px] uppercase tracking-[3px] font-bold text-mil-dark mb-10 border-b border-mil-border pb-4">
+                    1. Delivery Details</h2>
+
+                <form id="checkoutForm" class="space-y-8">
+                    <div class="space-y-2">
+                        <label class="text-[10px] uppercase tracking-[1px] font-bold text-mil-softDark">Full
+                            Name</label>
+                        <input type="text" id="customerName" required
+                            class="w-full bg-white border border-mil-border p-5 rounded-none focus:outline-none focus:border-mil-dark transition-all text-mil-dark font-medium placeholder:text-gray-300"
+                            placeholder="e.g. Thulani Sigasa">
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-[10px] uppercase tracking-[1px] font-bold text-mil-softDark">Active Phone
+                            Number</label>
+                        <input type="tel" id="customerPhone" required
+                            class="w-full bg-white border border-mil-border p-5 rounded-none focus:outline-none focus:border-mil-dark transition-all text-mil-dark font-medium placeholder:text-gray-300"
+                            placeholder="e.g. 072 123 4567">
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-[10px] uppercase tracking-[1px] font-bold text-mil-softDark">Delivery Address
+                            (Standerton Area)</label>
+                        <textarea id="deliveryAddress" required rows="3"
+                            class="w-full bg-white border border-mil-border p-5 rounded-none focus:outline-none focus:border-mil-dark transition-all text-mil-dark font-medium placeholder:text-gray-300"
+                            placeholder="Street address, house/room number, and any landmarks"></textarea>
+                    </div>
+
+                    <button type="submit" id="placeOrderBtn"
+                        class="w-full py-6 bg-mil-dark text-white text-[12px] uppercase tracking-[3px] font-bold rounded-full hover:bg-mil-accent transition-all shadow-2xl hover:shadow-mil-accent/20 flex items-center justify-center gap-3">
+                        <span>Place Delivery Order</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                    </button>
+                    <p class="text-[9px] text-center text-mil-softDark animate-pulse">Your order will be sent directly
+                        to the shop manager.</p>
+                </form>
+            </div>
+
+            <!-- Order Summary -->
+            <div class="animate-slide-up" style="animation-delay: 0.2s;">
+                <h2
+                    class="text-[12px] uppercase tracking-[3px] font-bold text-mil-dark mb-10 border-b border-mil-border pb-4">
+                    2. Order Summary</h2>
+
+                <div id="checkoutSummaryList" class="space-y-6 mb-10">
+                    <!-- Dynamic Items -->
+                </div>
+
+                <div class="bg-white p-8 border border-mil-border space-y-4">
+                    <div class="flex justify-between items-center text-sm">
+                        <span class="text-mil-softDark">Subtotal</span>
+                        <span class="cart-total font-bold text-mil-dark">R0.00</span>
+                    </div>
+                    <div class="flex justify-between items-center text-sm">
+                        <span class="text-mil-softDark">Delivery Fee</span>
+                        <span class="text-green-600 font-bold uppercase tracking-wider text-[10px]">Free for now</span>
+                    </div>
+                    <div class="pt-4 border-t border-mil-border flex justify-between items-center">
+                        <span class="text-[11px] uppercase tracking-[2px] font-bold text-mil-dark">Total Amount</span>
+                        <span class="cart-total text-2xl font-bold text-mil-dark">R0.00</span>
+                    </div>
+                </div>
+
+                <a href="javascript:history.back()"
+                    class="inline-block mt-8 text-[10px] uppercase tracking-[2px] font-bold text-mil-softDark hover:text-mil-dark transition-colors">
+                    &larr; Return to Shop
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const cart = window.auraCart;
+        if (cart.items.length === 0) {
+            window.location.href = '/'; // Go home if empty
+            return;
+        }
+
+        const summaryList = document.getElementById('checkoutSummaryList');
+        summaryList.innerHTML = cart.items.map(item => `
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 bg-white border border-mil-border rounded-lg overflow-hidden flex-shrink-0">
+                    <img src="${item.imageUrl}" class="w-full h-full object-cover">
+                </div>
+                <div class="flex-1">
+                    <h4 class="text-sm font-bold text-mil-dark">${item.name}</h4>
+                    <p class="text-[10px] text-mil-softDark">R${item.price.toFixed(2)} &times; ${item.quantity}</p>
+                </div>
+                <div class="text-sm font-bold text-mil-dark">
+                    R${(item.price * item.quantity).toFixed(2)}
+                </div>
+            </div>
+        `).join('');
+
+        const form = document.getElementById('checkoutForm');
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const submitBtn = document.getElementById('placeOrderBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span> <span>Processing...</span>';
+
+            const payload = {
+                shop_id: cart.items[0].shopId,
+                name: document.getElementById('customerName').value,
+                phone: document.getElementById('customerPhone').value,
+                address: document.getElementById('deliveryAddress').value,
+                items: cart.items.map(i => ({
+                    product_id: i.id,
+                    quantity: i.quantity,
+                    price: i.price
+                }))
+            };
+
+            try {
+                const response = await fetch('/api/checkout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    cart.clear(); // Empty basket
+                    window.location.href = `/order-success/${result.order_id}`;
+                } else {
+                    alert('Checkout failed: ' + result.error);
+                }
+            } catch (err) {
+                alert('An error occurred during checkout.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<span>Place Delivery Order</span> <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>';
+            }
+        });
+    });
+</script>
+{% endblock %}

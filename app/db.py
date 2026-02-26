@@ -61,9 +61,18 @@ def init_db(app):
                     shop_id         INTEGER REFERENCES shops(id) ON DELETE CASCADE,
                     customer_name   VARCHAR(200),
                     customer_phone  VARCHAR(20),
+                    delivery_address TEXT,
                     status          VARCHAR(50) DEFAULT 'pending',
                     total           NUMERIC(10,2),
                     created_at      TIMESTAMP DEFAULT NOW()
+                );
+
+                CREATE TABLE IF NOT EXISTS order_items (
+                    id              SERIAL PRIMARY KEY,
+                    order_id        INTEGER REFERENCES orders(id) ON DELETE CASCADE,
+                    product_id      INTEGER REFERENCES products(id) ON DELETE CASCADE,
+                    quantity        INTEGER NOT NULL DEFAULT 1,
+                    price           NUMERIC(10,2) NOT NULL
                 );
 
                 CREATE TABLE IF NOT EXISTS users (

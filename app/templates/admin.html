@@ -112,7 +112,7 @@
                 class="portfolio-card bg-white border border-mil-border flex flex-col sm:flex-row sm:items-center justify-between gap-4 group hover:border-mil-accent transition-colors overflow-hidden {{ 'opacity-60 bg-gray-50' if product.is_archived else '' }}">
 
                 <!-- Clickable Area for Stock Toggle -->
-                <div onclick="toggleProductStock({{ product.id }})"
+                <div onclick="toggleStockFromEvent(event)" data-product-id="{{ product.id }}"
                     class="flex-1 p-5 cursor-pointer hover:bg-mil-softBg transition-colors flex flex-col sm:flex-row sm:items-center gap-4">
 
                     <!-- Image Preview on Card -->
@@ -150,10 +150,12 @@
                     class="p-5 flex items-center gap-6 bg-gray-50/50 sm:bg-transparent border-t sm:border-t-0 border-mil-border">
                     <!-- Actions (Small) -->
                     <div class="flex items-center gap-3 pr-6 border-r border-mil-border">
-                        <button
-                            onclick='openEditModal({{ product.id }}, {{ product.name|tojson|safe }}, {{ product.price }}, {{ product.category|tojson|safe if product.category else "None"|tojson }}, {{ product.image_url|tojson|safe if product.image_url else ""|tojson }})'
+                        <button data-product-id="{{ product.id }}" data-product-name="{{ product.name|tojson|safe }}"
+                            data-product-price="{{ product.price }}"
+                            data-product-category="{{ product.category or 'None' }}"
+                            data-product-image="{{ product.image_url or '' }}" onclick="handleEditClick(this)"
                             class="text-[10px] uppercase tracking-[1.5px] font-bold text-mil-softDark hover:text-mil-accent transition-all">Edit</button>
-                        <button onclick="openDeleteModal({{ product.id }})"
+                        <button onclick="handleDeleteClick(this)" data-product-id="{{ product.id }}"
                             class="text-[10px] uppercase tracking-[1.5px] font-bold text-red-400 hover:text-red-600 transition-colors">Delete</button>
                     </div>
 
@@ -163,7 +165,7 @@
                             class="text-[9px] uppercase tracking-[1px] font-bold {{ 'text-gray-400' if product.is_archived else 'text-mil-accent' }}">
                             {{ 'Archived' if product.is_archived else 'Active' }}
                         </span>
-                        <button onclick="toggleArchive({{ product.id }})"
+                        <button onclick="handleArchiveClick(this)" data-product-id="{{ product.id }}"
                             class="relative inline-flex h-5 w-10 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-mil-accent focus:ring-offset-2 {{ 'bg-gray-300' if product.is_archived else 'bg-mil-accent' }}"
                             id="archive-btn-{{ product.id }}" role="switch"
                             aria-checked="{{ 'false' if product.is_archived else 'true' }}">
@@ -184,6 +186,10 @@
 
     </div>
 </section>
+
+<!-- Data bridge for business hours (Fixes linting) -->
+<div id="shop-hours-data" data-hours='{{ (shop.opening_hours or "{}") | safe }}' class="hidden"></div>
+
 
 <!-- Add/Edit Modal (Generic) -->
 <div id="product-modal" class="fixed inset-0 z-[100] hidden">
@@ -381,6 +387,15 @@
         modal.classList.add('hidden');
     }
 
+    function handleEditClick(btn) {
+        const id = btn.dataset.productId;
+        const name = JSON.parse(btn.dataset.productName);
+        const price = btn.dataset.productPrice;
+        const category = btn.dataset.productCategory;
+        const imageUrl = btn.dataset.productImage;
+        openEditModal(id, name, price, category, imageUrl);
+    }
+
     productForm.onsubmit = async (e) => {
         e.preventDefault();
         const priceVal = document.getElementById('modal-price').value.replace(/[^\d.]/g, ''); // Strip non-numeric except dot
@@ -392,12 +407,15 @@
         };
 
         const productId = document.getElementById('modal-product-id').value;
-        const url = isEditMode ? `/admin/api/product/${productId}/update` : '/admin/api/product/add';
+        const url = isEditMode ? `/admin/api/product/${productId}/update` : '/admin/add-product';
 
         try {
             const response = await fetch(url, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
                 body: JSON.stringify(payload)
             });
 
@@ -413,10 +431,15 @@
 
     let deleteTargetId = null;
 
+    function handleDeleteClick(btn) {
+        openDeleteModal(btn.dataset.productId);
+    }
+
     function openDeleteModal(productId) {
         deleteTargetId = productId;
         document.getElementById('delete-modal').classList.remove('hidden');
     }
+
 
     function closeDeleteModal() {
         document.getElementById('delete-modal').classList.add('hidden');
@@ -434,7 +457,10 @@
 
             const response = await fetch(`/admin/api/product/${productId}/delete`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
             });
 
             if (response.ok) {
@@ -451,13 +477,22 @@
         }
     };
 
+    function toggleStockFromEvent(event) {
+        const productId = event.currentTarget.dataset.productId;
+        toggleProductStock(productId);
+    }
+
     async function toggleProductStock(productId) {
+
         const badge = document.getElementById(`status-badge-${productId}`);
         const card = document.getElementById(`product-card-${productId}`);
 
         try {
             badge.style.opacity = '0.5';
-            const response = await fetch(`/admin/api/product/${productId}/toggle`, { method: 'POST' });
+            const response = await fetch(`/admin/api/product/${productId}/toggle`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': '{{ csrf_token() }}' }
+            });
             const data = await response.json();
 
             if (response.ok && data.success) {
@@ -472,7 +507,12 @@
         }
     }
 
+    function handleArchiveClick(btn) {
+        toggleArchive(btn.dataset.productId);
+    }
+
     async function toggleArchive(productId) {
+
         const btn = document.getElementById(`archive-btn-${productId}`);
         const circle = document.getElementById(`archive-circle-${productId}`);
         const label = document.getElementById(`archive-label-${productId}`);
@@ -480,7 +520,10 @@
 
         try {
             btn.style.opacity = '0.5';
-            const response = await fetch(`/admin/api/product/${productId}/archive`, { method: 'POST' });
+            const response = await fetch(`/admin/api/product/${productId}/archive`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': '{{ csrf_token() }}' }
+            });
             const data = await response.json();
 
             if (response.ok && data.success) {
@@ -572,7 +615,10 @@
             btn.style.opacity = '0.5';
             const response = await fetch('/admin/api/shop/hours', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
                 body: JSON.stringify({ hours })
             });
 
@@ -651,19 +697,20 @@
     // Load existing hours on startup
     window.addEventListener('DOMContentLoaded', () => {
         try {
-            // Using a safe parse for the JSON data passed from Flask
-            const hours = {{ (shop.opening_hours or '{}') | safe }};
-    const hoursObj = typeof hours === 'string' ? JSON.parse(hours) : hours;
+            const dataEl = document.getElementById('shop-hours-data');
+            const hours = dataEl ? dataEl.dataset.hours : '{}';
+            const hoursObj = typeof hours === 'string' ? JSON.parse(hours) : hours;
 
-    for (const [id, times] of Object.entries(hoursObj)) {
-        if (document.getElementById(`open-${id}`)) {
-            document.getElementById(`open-${id}`).value = times.open || '';
-            document.getElementById(`close-${id}`).value = times.close || '';
-        }
-    }
+            for (const [id, times] of Object.entries(hoursObj)) {
+                if (document.getElementById(`open-${id}`)) {
+                    document.getElementById(`open-${id}`).value = times.open || '';
+                    document.getElementById(`close-${id}`).value = times.close || '';
+                }
+            }
         } catch (e) {
-        console.error("Error loading hours:", e);
-    }
+            console.error("Error loading hours:", e);
+        }
     });
+
 </script>
 {% endblock %}

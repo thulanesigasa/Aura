@@ -143,8 +143,65 @@
             </div>
         </div>
     </footer>
+    <!-- Floating Cart Button -->
+    <button onclick="toggleCartSidebar()"
+        class="fixed bottom-8 right-8 z-[100] w-16 h-16 bg-mil-dark text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all group overflow-hidden">
+        <div
+            class="absolute inset-0 bg-mil-accent translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+        </div>
+        <div class="relative z-10">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                    d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+            </svg>
+            <span
+                class="cart-count absolute -top-2 -right-2 bg-mil-accent text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-mil-dark group-hover:border-mil-accent transition-colors">0</span>
+        </div>
+    </button>
 
+    <!-- Cart Sidebar -->
+    <div id="cartSidebar" class="fixed inset-0 z-[200] hidden">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-md" onclick="toggleCartSidebar()"></div>
+        <div
+            class="absolute top-0 right-0 h-full w-full max-w-[400px] bg-white shadow-2xl flex flex-col translate-x-full transition-transform duration-500 ease-out">
+            <!-- Header -->
+            <div class="p-8 border-b border-mil-border flex items-center justify-between">
+                <div>
+                    <h3 class="text-2xl font-bold text-mil-dark">Your Basket</h3>
+                    <p class="text-[10px] uppercase tracking-[2px] font-bold text-mil-softDark mt-1"><span
+                            class="cart-count">0</span> Items Selected</p>
+                </div>
+                <button onclick="toggleCartSidebar()" class="text-mil-softDark hover:text-mil-dark">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Items List -->
+            <div id="cartItemsList" class="flex-1 overflow-y-auto p-8 space-y-6">
+                <!-- Dynamic Items -->
+                <div class="empty-cart-msg text-center py-20">
+                    <p class="text-mil-softDark italic">Your basket is empty.</p>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="p-8 border-t border-mil-border bg-mil-softBg">
+                <div class="flex items-center justify-between mb-8">
+                    <span class="text-[12px] uppercase tracking-[2px] font-bold text-mil-softDark">Total Amount</span>
+                    <span class="cart-total text-2xl font-bold text-mil-dark">R0.00</span>
+                </div>
+                <button onclick="window.location.href='/checkout'"
+                    class="w-full py-5 bg-mil-dark text-white text-[12px] uppercase tracking-[2px] font-bold rounded-full hover:bg-mil-accent transition-all shadow-xl hover:shadow-mil-accent/20">
+                    Proceed to Delivery
+                </button>
+            </div>
+        </div>
+    </div>
     <script src="{{ url_for('static', filename='main.js') }}"></script>
+    {% block extra_js %}{% endblock %}
 </body>
 
 </html>

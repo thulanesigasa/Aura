@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Setup MFA | Aura Security{% endblock %}
+
+{% block content %}
+<section class="bg-[#1a1a1a] pt-24 pb-20 border-b border-[rgba(255,255,255,0.1)] relative z-10">
+    <div class="max-w-md mx-auto px-4 text-center">
+        <h1 class="text-4xl font-bold text-mil-light tracking-tight mb-4">Secure Your <span
+                class="text-mil-accent font-light">Account</span></h1>
+        <p class="text-lg text-[rgba(255,255,255,0.6)]">Enable Multi-Factor Authentication for enterprise-grade
+            security.</p>
+    </div>
+</section>
+
+<section class="bg-mil-softBg py-20 relative z-10 min-h-[600px]">
+    <div class="max-w-md mx-auto px-4">
+        <div class="bg-white border border-mil-border p-8 shadow-sm">
+            <h3 class="text-sm uppercase tracking-[3px] font-bold text-mil-dark mb-6 text-center">Step 1: Scan QR Code
+            </h3>
+
+            <div class="flex justify-center mb-8">
+                <div class="p-4 bg-white border border-mil-border rounded-xl">
+                    <img src="data:image/png;base64,{{ qr_code }}" alt="MFA QR Code" class="w-48 h-48">
+                </div>
+            </div>
+
+            <p class="text-sm text-mil-softDark text-center mb-8">Scan this code with an authenticator app (like Google
+                Authenticator or Authy).</p>
+
+            <h3 class="text-sm uppercase tracking-[3px] font-bold text-mil-dark mb-6 text-center">Step 2: Verify Setup
+            </h3>
+
+            <form action="{{ url_for('main.mfa_verify_setup') }}" method="POST" class="space-y-6">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div>
+                    <label for="token"
+                        class="block text-[11px] uppercase tracking-[2px] font-bold text-mil-dark mb-2 text-center">Enter
+                        6-digit Code</label>
+                    <input type="text" name="token" id="token" required placeholder="000000" maxlength="6"
+                        class="w-full bg-mil-softBg border-b border-mil-border py-3 px-4 text-center text-2xl tracking-[10px] text-mil-dark focus:outline-none focus:border-mil-accent transition-all">
+                </div>
+
+                <div class="pt-4">
+                    <button type="submit"
+                        class="mil-button inline-flex items-center justify-between h-[55px] pl-6 pr-2 bg-mil-dark text-mil-light text-[12px] uppercase tracking-[2px] font-bold rounded-full hover:brightness-110 transition-all group w-full">
+                        <span>Enable MFA</span>
+                        <div
+                            class="w-10 h-10 rounded-full bg-mil-accent flex items-center justify-center opacity-90 group-hover:scale-110 transition-transform">
+                            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 13l4 4L19 7" />
+                            </svg>
+                        </div>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

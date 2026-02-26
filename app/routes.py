@@ -2,12 +2,16 @@
 
 import os
 import json
-import psycopg2
-import psycopg2.extras
-from flask import Blueprint, render_template, Response, abort, request, redirect, url_for, session
-from werkzeug.security import generate_password_hash, check_password_hash
-from .db import get_db
+import pyotp
+import qrcode
+import io
+import base64
+from flask import Blueprint, render_template, Response, abort, request, redirect, url_for, session, flash
+from flask_login import login_user, logout_user, login_required, current_user
+from sqlalchemy import func
+from .models import db, Shop, Product, User, Order, OrderItem
 from .seo_utils import generate_sitemap_xml, build_local_business_jsonld
+from . import limiter
 
 bp = Blueprint("main", __name__)
 
@@ -19,45 +23,41 @@ BASE_URL = "https://aura.co.za"
 def _fetch_all_shops():
     """Return filtered shops based on count: first 3 if < 10, random 3 if >= 10. Includes manager info."""
     try:
-        db = get_db()
-        cur = db.cursor()
+        count = Shop.query.count()
         
-        # 1. Count total shops
-        cur.execute("SELECT COUNT(*) FROM shops;")
-        count = cur.fetchone()[0]
-        
-        # 2. Determine visibility logic (Includes manager info JOIN)
         if count < 10:
             # Show first three that registered
-            query = (
-                "SELECT s.id, s.name, s.slug, s.description, s.address, s.city, s.province, "
-                "s.postal_code, s.phone, s.latitude, s.longitude, s.opening_hours, "
-                "s.image_url, s.is_delivery, u.first_name, u.last_name "
-                "FROM shops s LEFT JOIN users u ON s.id = u.shop_id "
-                "ORDER BY s.id ASC LIMIT 3;"
-            )
+            shops_query = Shop.query.order_by(Shop.id.asc()).limit(3).all()
         else:
             # Show 3 random shops as we scale
-            query = (
-                "SELECT s.id, s.name, s.slug, s.description, s.address, s.city, s.province, "
-                "s.postal_code, s.phone, s.latitude, s.longitude, s.opening_hours, "
-                "s.image_url, s.is_delivery, u.first_name, u.last_name "
-                "FROM shops s LEFT JOIN users u ON s.id = u.shop_id "
-                "ORDER BY RANDOM() LIMIT 3;"
-            )
+            shops_query = Shop.query.order_by(func.random()).limit(3).all()
             
-        cur.execute(query)
-        cols = [d[0] for d in cur.description]
-        rows = cur.fetchall()
-        cur.close()
-        
         shops = []
-        for row in rows:
-            shop_dict = dict(zip(cols, row))
-            # Combine first and last name for manager
-            fname = shop_dict.pop('first_name', '')
-            lname = shop_dict.pop('last_name', '')
-            shop_dict['manager_name'] = f"{fname} {lname}".strip() or "General Manager"
+        for shop in shops_query:
+            # Convert to dict for template compatibility or update templates to use objects
+            # For now, let's keep the dict approach to minimize template changes
+            shop_dict = {
+                "id": shop.id,
+                "name": shop.name,
+                "slug": shop.slug,
+                "description": shop.description,
+                "address": shop.address,
+                "city": shop.city,
+                "province": shop.province,
+                "postal_code": shop.postal_code,
+                "phone": shop.phone,
+                "latitude": shop.latitude,
+                "longitude": shop.longitude,
+                "opening_hours": shop.opening_hours,
+                "image_url": shop.image_url,
+                "is_delivery": shop.is_delivery,
+            }
+            # Find manager (first user assigned to this shop)
+            manager = User.query.filter_by(shop_id=shop.id).first()
+            if manager:
+                shop_dict['manager_name'] = f"{manager.first_name} {manager.last_name}".strip()
+            else:
+                shop_dict['manager_name'] = "General Manager"
             shops.append(shop_dict)
         return shops
     except Exception as e:
@@ -66,61 +66,16 @@ def _fetch_all_shops():
 
 
 def _fetch_shop_by_slug(slug):
-    """Return a single shop dict or None."""
-    try:
-        db = get_db()
-        cur = db.cursor()
-        cur.execute(
-            "SELECT id, name, slug, description, address, city, province, "
-            "postal_code, phone, latitude, longitude, opening_hours, "
-            "image_url, is_delivery FROM shops WHERE slug = %s;",
-            (slug,),
-        )
-        cols = [d[0] for d in cur.description]
-        row = cur.fetchone()
-        cur.close()
-        return dict(zip(cols, row)) if row else None
-    except Exception:
-        return None
-
-
-def _fetch_shop_by_id(shop_id):
-    """Return a single shop dict or None by ID."""
-    try:
-        db = get_db()
-        cur = db.cursor()
-        cur.execute(
-            "SELECT id, name, slug, description, address, city, province, "
-            "postal_code, phone, latitude, longitude, opening_hours, "
-            "image_url, is_delivery FROM shops WHERE id = %s;",
-            (shop_id,),
-        )
-        cols = [d[0] for d in cur.description]
-        row = cur.fetchone()
-        cur.close()
-        return dict(zip(cols, row)) if row else None
-    except Exception:
-        return None
+    """Return a single shop record or None."""
+    return Shop.query.filter_by(slug=slug).first()
 
 
 def _fetch_products_for_shop(shop_id, include_archived=False):
     """Return products for a given shop. Optionally include archived ones."""
-    try:
-        db = get_db()
-        cur = db.cursor()
-        
-        query = "SELECT id, name, price, category, in_stock, is_archived, image_url FROM products WHERE shop_id = %s"
-        if not include_archived:
-            query += " AND is_archived = FALSE"
-        query += " ORDER BY category, name;"
-        
-        cur.execute(query, (shop_id,))
-        cols = [d[0] for d in cur.description]
-        rows = cur.fetchall()
-        cur.close()
-        return [dict(zip(cols, row)) for row in rows]
-    except Exception:
-        return []
+    query = Product.query.filter_by(shop_id=shop_id)
+    if not include_archived:
+        query = query.filter_by(is_archived=False)
+    return query.order_by(Product.category, Product.name).all()
 
 
 # ── Pages ────────────────────────────────────────────────────────────────────
@@ -138,8 +93,27 @@ def shop_detail(shop_name):
     shop = _fetch_shop_by_slug(shop_name)
     if not shop:
         abort(404)
-    products = _fetch_products_for_shop(shop["id"])
-    jsonld = build_local_business_jsonld(shop, base_url=BASE_URL)
+    products = _fetch_products_for_shop(shop.id)
+    
+    # Convert shop object to dict for SEO utils (unless refactored too)
+    shop_dict = {
+        "id": shop.id,
+        "name": shop.name,
+        "slug": shop.slug,
+        "description": shop.description,
+        "address": shop.address,
+        "city": shop.city,
+        "province": shop.province,
+        "postal_code": shop.postal_code,
+        "phone": shop.phone,
+        "latitude": shop.latitude,
+        "longitude": shop.longitude,
+        "opening_hours": shop.opening_hours,
+        "image_url": shop.image_url,
+        "is_delivery": shop.is_delivery,
+    }
+    
+    jsonld = build_local_business_jsonld(shop_dict, base_url=BASE_URL)
     return render_template(
         "shop.html",
         shop=shop,
@@ -172,6 +146,68 @@ def contact():
 @bp.route("/join")
 def join():
     return render_template("join.html")
+
+
+@bp.route("/checkout")
+def checkout():
+    """Checkout page for reviewing cart and entering delivery info."""
+    return render_template("checkout.html")
+
+
+@bp.route("/api/checkout", methods=["POST"])
+def api_checkout():
+    """Process order submission."""
+    try:
+        data = request.json
+        shop_id = data.get("shop_id")
+        customer_name = data.get("name")
+        customer_phone = data.get("phone")
+        delivery_address = data.get("address")
+        items = data.get("items", []) # List of {product_id, quantity, price}
+        
+        if not items or not shop_id or not customer_name or not customer_phone or not delivery_address:
+            return Response(json.dumps({"error": "Missing required fields"}), status=400, mimetype="application/json")
+            
+        db = get_db()
+        cur = db.cursor()
+        
+        # Start transaction
+        db.autocommit = False
+        
+        try:
+            # 1. Create main order
+            total = sum(float(item['price']) * int(item['quantity']) for item in items)
+            cur.execute(
+                "INSERT INTO orders (shop_id, customer_name, customer_phone, delivery_address, total, status) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id;",
+                (shop_id, customer_name, customer_phone, delivery_address, total, 'pending')
+            )
+            order_id = cur.fetchone()[0]
+            
+            # 2. Create order items
+            for item in items:
+                cur.execute(
+                    "INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (%s, %s, %s, %s);",
+                    (order_id, item['product_id'], item['quantity'], item['price'])
+                )
+            
+            db.commit()
+            return Response(json.dumps({"success": True, "order_id": order_id}), status=201, mimetype="application/json")
+            
+        except Exception as e:
+            db.rollback()
+            raise e
+        finally:
+            db.autocommit = True
+            cur.close()
+            
+    except Exception as e:
+        return Response(json.dumps({"error": str(e)}), status=500, mimetype="application/json")
+
+
+@bp.route("/order-success/<int:order_id>")
+def order_success(order_id):
+    """Simple confirmation page."""
+    return render_template("order_success.html", order_id=order_id)
 
 
 # ── Admin endpoints ──────────────────────────────────────────────────────────
@@ -225,161 +261,260 @@ def validate_password(password):
 
 @bp.route("/admin/signup", methods=["GET", "POST"])
 def admin_signup():
-    """Signup for new shop owners – creating a new shop automatically with full details."""
+    """Register a new shop and admin account within a transaction."""
     if request.method == "POST":
-        email = request.form.get("email")
-        password = request.form.get("password")
-        confirm_password = request.form.get("confirm_password")
-        shop_name = request.form.get("shop_name")
-        first_name = request.form.get("first_name")
-        last_name = request.form.get("last_name")
-        phone = request.form.get("phone")
-        address = request.form.get("address")
-        city = request.form.get("city", "Standerton")
-        province = request.form.get("province", "Mpumalanga")
-        
-        if not email or not password or not confirm_password or not shop_name or not first_name or not last_name or not phone:
-            return render_template("signup.html", error="Basic info, Shop Name, and matching Passwords are required")
-            
-        if password != confirm_password:
-            return render_template("signup.html", error="Passwords do not match")
+        email = request.form.get("email", "").strip()
+        password = request.form.get("password", "")
+        confirm_password = request.form.get("confirm_password", "")
+        shop_name = request.form.get("shop_name", "").strip()
+        first_name = request.form.get("first_name", "").strip()
+        last_name = request.form.get("last_name", "").strip()
+        phone = request.form.get("phone", "").strip()
+        address = request.form.get("address", "").strip()
+        city = request.form.get("city", "Standerton").strip()
+        province = request.form.get("province", "Mpumalanga").strip()
 
-        # Backend Password Validation
-        is_valid, msg = validate_password(password)
-        if not is_valid:
-            return render_template("signup.html", error=msg)
-            
-        db = get_db()
-        cur = db.cursor()
-        
-        # Check if email exists
-        cur.execute("SELECT id FROM users WHERE email = %s;", (email,))
-        if cur.fetchone():
-            cur.close()
-            return render_template("signup.html", error="Email already registered")
-            
-        # Generate slug from shop name
-        import re
-        slug = re.sub(r'[^a-zA-Z0-9]', '-', shop_name.lower()).strip('-')
-        # Ensure slug unique
-        cur.execute("SELECT id FROM shops WHERE slug = %s;", (slug,))
-        if cur.fetchone():
-            import time
-            slug = f"{slug}-{int(time.time() % 1000)}"
+        if not email or not password or not confirm_password or not shop_name or not first_name or not last_name or not phone:
+            flash("All fields are required.", "danger")
+            return redirect(url_for("main.admin_signup"))
+
+        if password != confirm_password:
+            flash("Passwords do not match.", "danger")
+            return redirect(url_for("main.admin_signup"))
 
         try:
-            db.autocommit = False # Start transaction
+            # Check if email taken
+            if User.query.filter_by(email=email).first():
+                flash("Email already registered.", "danger")
+                return redirect(url_for("main.admin_signup"))
+
+            # 1. Create Shop
+            slug = shop_name.lower().replace(" ", "-")
+            if Shop.query.filter_by(slug=slug).first():
+                slug = f"{slug}-{os.urandom(2).hex()}"
             
-            # 1. Create the Shop with full address/city/province
-            cur.execute(
-                "INSERT INTO shops (name, slug, address, city, province, phone) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id;",
-                (shop_name, slug, address, city, province, phone)
+            new_shop = Shop(
+                name=shop_name, 
+                slug=slug, 
+                address=address, 
+                city=city, 
+                province=province, 
+                phone=phone
             )
-            shop_id = cur.fetchone()[0]
-            
-            # 2. Create the User with owner details
-            password_hash = generate_password_hash(password)
-            cur.execute(
-                "INSERT INTO users (shop_id, first_name, last_name, phone, email, password_hash) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id;",
-                (shop_id, first_name, last_name, phone, email, password_hash)
+            db.session.add(new_shop)
+            db.session.flush() # Get ID
+
+            # 2. Create User
+            new_user = User(
+                shop_id=new_shop.id,
+                email=email,
+                first_name=first_name,
+                last_name=last_name,
+                phone=phone
             )
-            user_id = cur.fetchone()[0]
+            new_user.set_password(password)
+            db.session.add(new_user)
             
-            db.commit() # Success!
-            cur.close()
-            db.autocommit = True # Restore for next reqs
+            db.session.commit()
             
-            session["user_id"] = user_id
-            session["shop_id"] = shop_id
-            return redirect(url_for("main.admin_dashboard", shop_name=slug))
+            login_user(new_user)
+            flash("Account created! Set up MFA for better security.", "success")
+            return redirect(url_for("main.mfa_setup"))
+            
         except Exception as e:
-            db.rollback() # Undo shop if user failed
-            db.autocommit = True # Reset
-            return render_template("signup.html", error=f"Registration failed: {e}")
-            
+            db.session.rollback()
+            print(f"Signup error: {e}")
+            flash("An error occurred during registration.", "danger")
+
     return render_template("signup.html")
 
-@bp.route("/admin/api/product/add", methods=["POST"])
+
+@bp.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    flash("Logged out.", "info")
+    return redirect(url_for("main.index"))
+
+
+# ── MFA Implementation ───────────────────────────────────────────────────────
+
+@bp.route("/mfa/setup")
+@login_required
+def mfa_setup():
+    """Generate TOTP secret and QR code for user."""
+    if current_user.mfa_enabled:
+        flash("MFA is already enabled.", "info")
+        return redirect(url_for('main.admin_dashboard'))
+    
+    # Generate secret if not exists
+    if not current_user.mfa_secret:
+        current_user.mfa_secret = pyotp.random_base32()
+        db.session.commit()
+    
+    # Generate QR Code
+    totp = pyotp.TOTP(current_user.mfa_secret)
+    provision_url = totp.provisioning_uri(name=current_user.email, issuer_name="Aura Delivery")
+    
+    img = qrcode.make(provision_url)
+    buffered = io.BytesIO()
+    img.save(buffered, format="PNG")
+    qr_base64 = base64.b64encode(buffered.getvalue()).decode()
+    
+    return render_template("mfa_setup.html", qr_code=qr_base64)
+
+
+@bp.route("/mfa/verify-setup", methods=["POST"])
+@login_required
+def mfa_verify_setup():
+    """Verify the first TOTP token to enable MFA."""
+    token = request.form.get("token")
+    totp = pyotp.TOTP(current_user.mfa_secret)
+    
+    if totp.verify(token):
+        current_user.mfa_enabled = True
+        db.session.commit()
+        flash("MFA enabled successfully!", "success")
+        return redirect(url_for('main.admin_dashboard'))
+    
+    flash("Invalid token. Please try again.", "danger")
+    return redirect(url_for('main.mfa_setup'))
+
+
+@bp.route("/mfa/verify", methods=["GET", "POST"])
+def mfa_verify():
+    """Verify TOTP during login."""
+    user_id = session.get('mfa_user_id')
+    if not user_id:
+        return redirect(url_for('main.admin_login'))
+    
+    user = User.query.get(user_id)
+    if request.method == "POST":
+        token = request.form.get("token")
+        totp = pyotp.TOTP(user.mfa_secret)
+        
+        if totp.verify(token):
+            login_user(user)
+            session.pop('mfa_user_id', None)
+            flash("Logged in successfully!", "success")
+            return redirect(url_for('main.admin_dashboard'))
+        
+        flash("Invalid token.", "danger")
+        
+    return render_template("mfa_verify.html")
+
+
+# ── Admin Panel (Protected) ───────────────────────────────────────────────────
+
+@bp.route("/admin")
+@login_required
+def admin_dashboard():
+    """Manage shop profile/inventory."""
+    shop = Shop.query.get(current_user.shop_id)
+    products = _fetch_products_for_shop(shop.id, include_archived=True)
+    return render_template("admin.html", shop=shop, products=products)
+
+
+@bp.route("/admin/update-hours", methods=["POST"])
+@login_required
+def update_hours():
+    """Save business hours as JSON."""
+    shop = Shop.query.get(current_user.shop_id)
+    hours = {
+        "mon-fri": {"open": request.form.get("mon-fri-open"), "close": request.form.get("mon-fri-close")},
+        "sat-sun": {"open": request.form.get("sat-sun-open"), "close": request.form.get("sat-sun-close")},
+        "holidays": {"open": request.form.get("holidays-open"), "close": request.form.get("holidays-close")},
+    }
+    shop.opening_hours = json.dumps(hours)
+    db.session.commit()
+    flash("Business hours updated.")
+    return redirect(url_for("main.admin_dashboard"))
+
+
+@bp.route("/admin/add-product", methods=["POST"])
+@login_required
 def add_product():
     """Add a new product to the shop."""
-    if "user_id" not in session:
-        return Response(json.dumps({"error": "Unauthorized"}), status=401, mimetype="application/json")
-        
-    data = request.json
-    name = data.get("name")
-    price = data.get("price")
-    category = data.get("category", "Uncategorized")
-    image_url = data.get("image_url")
-    shop_id = session.get("shop_id")
+    name = request.form.get("name")
+    price = request.form.get("price")
+    category = request.form.get("category")
+    image_url = request.form.get("image_url")
     
-    if not name or not price:
-        return Response(json.dumps({"error": "Name and Price required"}), status=400, mimetype="application/json")
-        
-    try:
-        db = get_db()
-        cur = db.cursor()
-        cur.execute(
-            "INSERT INTO products (shop_id, name, price, category, image_url, in_stock) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id;",
-            (shop_id, name, price, category, image_url, True)
-        )
-        new_id = cur.fetchone()[0]
-        cur.close()
-        return Response(json.dumps({"success": True, "id": new_id}), status=201, mimetype="application/json")
-    except Exception as e:
-        return Response(json.dumps({"error": str(e)}), status=500, mimetype="application/json")
+    new_product = Product(
+        shop_id=current_user.shop_id,
+        name=name,
+        price=price,
+        category=category,
+        image_url=image_url
+    )
+    db.session.add(new_product)
+    db.session.commit()
+    
+    flash(f"Product '{name}' added.")
+    return redirect(url_for("main.admin_dashboard"))
+
+
+# ── Product API (Protected) ───────────────────────────────────────────────────
 
 @bp.route("/admin/api/product/<int:product_id>/update", methods=["POST"])
-def update_product(product_id):
-    """Update product name, price, or category."""
-    if "user_id" not in session:
-        return Response(json.dumps({"error": "Unauthorized"}), status=401, mimetype="application/json")
-        
+@login_required
+def update_product_api(product_id):
+    """Update product name, price, category, or image."""
     data = request.json
-    name = data.get("name")
-    price = data.get("price")
-    category = data.get("category")
-    image_url = data.get("image_url")
+    product = Product.query.get_or_404(product_id)
     
-    try:
-        db = get_db()
-        cur = db.cursor()
-        # Verify ownership
-        cur.execute("SELECT shop_id FROM products WHERE id = %s;", (product_id,))
-        row = cur.fetchone()
-        if not row or row[0] != session.get("shop_id"):
-            cur.close()
-            return Response(json.dumps({"error": "Forbidden"}), status=403, mimetype="application/json")
-            
-        cur.execute(
-            "UPDATE products SET name = %s, price = %s, category = %s, image_url = %s WHERE id = %s;",
-            (name, price, category, image_url, product_id)
-        )
-        cur.close()
-        return Response(json.dumps({"success": True}), status=200, mimetype="application/json")
-    except Exception as e:
-        return Response(json.dumps({"error": str(e)}), status=500, mimetype="application/json")
+    if product.shop_id != current_user.shop_id:
+        abort(403)
+        
+    product.name = data.get("name")
+    product.price = data.get("price")
+    product.category = data.get("category")
+    product.image_url = data.get("image_url")
+    
+    db.session.commit()
+    return Response(json.dumps({"success": True}), status=200, mimetype="application/json")
+
 
 @bp.route("/admin/api/product/<int:product_id>/delete", methods=["POST"])
-def delete_product(product_id):
+@login_required
+def delete_product_api(product_id):
     """Remove a product from the shop."""
-    if "user_id" not in session:
-        return Response(json.dumps({"error": "Unauthorized"}), status=401, mimetype="application/json")
+    product = Product.query.get_or_404(product_id)
+    
+    if product.shop_id != current_user.shop_id:
+        abort(403)
         
-    try:
-        db = get_db()
-        cur = db.cursor()
-        # Verify ownership
-        cur.execute("SELECT shop_id FROM products WHERE id = %s;", (product_id,))
-        row = cur.fetchone()
-        if not row or row[0] != session.get("shop_id"):
-            cur.close()
-            return Response(json.dumps({"error": "Forbidden"}), status=403, mimetype="application/json")
-            
-        cur.execute("DELETE FROM products WHERE id = %s;", (product_id,))
-        cur.close()
-        return Response(json.dumps({"success": True}), status=200, mimetype="application/json")
-    except Exception as e:
-        return Response(json.dumps({"error": str(e)}), status=500, mimetype="application/json")
+    db.session.delete(product)
+    db.session.commit()
+    return Response(json.dumps({"success": True}), status=200, mimetype="application/json")
+
+
+@bp.route("/admin/api/product/<int:product_id>/toggle", methods=["POST"])
+@login_required
+def toggle_product_stock_api(product_id):
+    """Toggle the in_stock boolean."""
+    product = Product.query.get_or_404(product_id)
+    
+    if product.shop_id != current_user.shop_id:
+        abort(403)
+        
+    product.in_stock = not product.in_stock
+    db.session.commit()
+    return Response(json.dumps({"success": True, "in_stock": product.in_stock}), status=200, mimetype="application/json")
+
+
+@bp.route("/admin/api/product/<int:product_id>/archive", methods=["POST"])
+@login_required
+def archive_product_api(product_id):
+    """Toggle the is_archived boolean."""
+    product = Product.query.get_or_404(product_id)
+    
+    if product.shop_id != current_user.shop_id:
+        abort(403)
+        
+    product.is_archived = not product.is_archived
+    db.session.commit()
+    return Response(json.dumps({"success": True, "is_archived": product.is_archived}), status=200, mimetype="application/json")
 
 
 @bp.route("/admin/logout")
@@ -415,85 +550,19 @@ def admin_dashboard(shop_name):
     )
 
 
-@bp.route("/admin/api/product/<int:product_id>/toggle", methods=["POST"])
-def toggle_product_stock(product_id):
-    """Toggle the in_stock boolean for a given product."""
-    if "user_id" not in session:
-        return Response(json.dumps({"error": "Unauthorized"}), status=401, mimetype="application/json")
-        
-    try:
-        db = get_db()
-        cur = db.cursor()
-        
-        # Verify ownership
-        cur.execute("SELECT shop_id, in_stock FROM products WHERE id = %s;", (product_id,))
-        row = cur.fetchone()
-        if not row:
-            return Response(json.dumps({"error": "Product not found"}), status=404, mimetype="application/json")
-            
-        if row[0] != session.get("shop_id"):
-            return Response(json.dumps({"error": "Forbidden"}), status=403, mimetype="application/json")
-            
-        new_status = not row[1]
-        
-        # Update status
-        cur.execute("UPDATE products SET in_stock = %s WHERE id = %s;", (new_status, product_id))
-        cur.close()
-        
-        return Response(json.dumps({"success": True, "in_stock": new_status}), status=200, mimetype="application/json")
-    except Exception as e:
-        return Response(json.dumps({"error": str(e)}), status=500, mimetype="application/json")
-
-
-@bp.route("/admin/api/product/<int:product_id>/archive", methods=["POST"])
-def archive_product(product_id):
-    """Toggle the is_archived boolean for a given product."""
-    if "user_id" not in session:
-        return Response(json.dumps({"error": "Unauthorized"}), status=401, mimetype="application/json")
-        
-    try:
-        db = get_db()
-        cur = db.cursor()
-        
-        # Verify ownership
-        cur.execute("SELECT shop_id, is_archived FROM products WHERE id = %s;", (product_id,))
-        row = cur.fetchone()
-        if not row:
-            return Response(json.dumps({"error": "Product not found"}), status=404, mimetype="application/json")
-            
-        if row[0] != session.get("shop_id"):
-            return Response(json.dumps({"error": "Forbidden"}), status=403, mimetype="application/json")
-            
-        new_status = not row[1]
-        
-        # Update status
-        cur.execute("UPDATE products SET is_archived = %s WHERE id = %s;", (new_status, product_id))
-        db.commit()
-        cur.close()
-        
-        return Response(json.dumps({"success": True, "is_archived": new_status}), status=200, mimetype="application/json")
-    except Exception as e:
-        return Response(json.dumps({"error": str(e)}), status=500, mimetype="application/json")
-
-
-# ── SEO endpoints ───────────────────────────────────────────────────────────
+# ── SEO & Static ─────────────────────────────────────────────────────────────
 
 @bp.route("/admin/api/shop/hours", methods=["POST"])
+@login_required
 def update_shop_hours():
     """Update structured opening hours for a shop."""
-    if "user_id" not in session:
-        return Response(json.dumps({"error": "Unauthorized"}), status=401, mimetype="application/json")
-        
     try:
         data = request.json
         hours_json = json.dumps(data.get("hours", {}))
-        shop_id = session.get("shop_id")
         
-        db = get_db()
-        cur = db.cursor()
-        cur.execute("UPDATE shops SET opening_hours = %s WHERE id = %s;", (hours_json, shop_id))
-        db.commit()
-        cur.close()
+        shop = Shop.query.get_or_404(current_user.shop_id)
+        shop.opening_hours = hours_json
+        db.session.commit()
         
         return Response(json.dumps({"success": True}), status=200, mimetype="application/json")
     except Exception as e:
@@ -503,15 +572,39 @@ def update_shop_hours():
 @bp.route("/sitemap.xml")
 def sitemap():
     """Dynamically generated sitemap."""
-    shops = _fetch_all_shops()
+    shops_query = Shop.query.all()
+    shops = []
+    for shop in shops_query:
+        shops.append({
+            "id": shop.id,
+            "slug": shop.slug
+        })
     xml = generate_sitemap_xml(shops, base_url=BASE_URL)
     return Response(xml, mimetype="application/xml")
 
 
 @bp.route("/robots.txt")
 def robots():
-    """Serve robots.txt from static folder."""
+    """Serve robots.txt."""
     return bp.send_static_file("robots.txt")
+
+
+# ── Static Info Pages ────────────────────────────────────────────────────────
+
+@bp.route("/privacy")
+def privacy(): return render_template("privacy.html")
+
+@bp.route("/terms")
+def terms(): return render_template("terms.html")
+
+@bp.route("/about")
+def about(): return render_template("about.html")
+
+@bp.route("/contact")
+def contact(): return render_template("contact.html")
+
+@bp.route("/join")
+def join(): return render_template("join.html")
 
 
 # ── Error handlers ───────────────────────────────────────────────────────────
@@ -523,4 +616,4 @@ def page_not_found(e):
 
 @bp.app_errorhandler(403)
 def forbidden(e):
-    return render_template("404.html"), 403 # Reuse 404 or create a 403 if needed
+    return render_template("404.html"), 403

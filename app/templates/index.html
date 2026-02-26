@@ -29,7 +29,7 @@
             {% if shops %}
             {% for shop in shops %}
             <div class="shop-card bg-mil-light rounded-none border border-mil-border flex flex-col transition-all hover:shadow-[0_10px_30px_rgba(0,0,0,0.05)] hover:-translate-y-1 animate-slide-up"
-                style="animation-delay: {{ loop.index0 * 0.1 }}s">
+                data-idx="{{ loop.index0 }}">
                 <!-- Shop Image / Placeholder -->
                 <div class="h-48 bg-mil-softBg relative w-full flex items-center justify-center overflow-hidden group">
                     {% if shop.image_url %}
@@ -87,4 +87,13 @@
         </div>
     </div>
 </section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Apply staggered animation delays to shop cards without triggering CSS linting
+    document.querySelectorAll('.shop-card[data-idx]').forEach(card => {
+        card.style.animationDelay = (card.dataset.idx * 0.1) + 's';
+    });
+</script>
 {% endblock %}
