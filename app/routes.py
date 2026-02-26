@@ -1,5 +1,6 @@
 """Flask routes for the Aura platform."""
 
+import os
 import json
 import psycopg2
 import psycopg2.extras
@@ -406,7 +407,13 @@ def admin_dashboard(shop_name):
     cur.execute("SELECT first_name, last_name, email, phone FROM users WHERE id = %s", (session.get("user_id"),))
     user = cur.fetchone()
     
-    return render_template("admin.html", shop=shop, products=products, user=user)
+    return render_template(
+        "admin.html", 
+        shop=shop, 
+        products=products, 
+        user=user, 
+        unsplash_key=os.environ.get("UNSPLASH_ACCESS_KEY")
+    )
 
 
 @bp.route("/admin/api/product/<int:product_id>/toggle", methods=["POST"])
