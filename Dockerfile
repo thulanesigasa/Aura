@@ -22,6 +22,11 @@ FROM python:3.11-slim
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
+# Install runtime dependencies (like curl for healthcheck)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
 # Create a non-root user and group
 RUN groupadd -r aurauser && useradd -r -g aurauser -s /sbin/nologin aurauser
 
