@@ -151,7 +151,7 @@
                     <!-- Actions (Small) -->
                     <div class="flex items-center gap-3 pr-6 border-r border-mil-border">
                         <button
-                            onclick="openEditModal({{ product.id }}, {{ product.name|tojson }}, {{ product.price }}, {{ product.category|tojson if product.category else 'None'|tojson }}, {{ product.image_url|tojson if product.image_url else ''|tojson }})"
+                            onclick='openEditModal({{ product.id }}, {{ product.name|tojson|safe }}, {{ product.price }}, {{ product.category|tojson|safe if product.category else "None"|tojson }}, {{ product.image_url|tojson|safe if product.image_url else ""|tojson }})'
                             class="text-[10px] uppercase tracking-[1.5px] font-bold text-mil-softDark hover:text-mil-accent transition-all">Edit</button>
                         <button onclick="openDeleteModal({{ product.id }})"
                             class="text-[10px] uppercase tracking-[1.5px] font-bold text-red-400 hover:text-red-600 transition-colors">Delete</button>
@@ -275,30 +275,31 @@
     </div>
 </div>
 
-<!-- Custom Delete Confirmation Modal -->
+<!-- Custom Delete Confirmation Modal (Theme Matched) -->
 <div id="delete-modal" class="fixed inset-0 z-[150] hidden">
-    <div class="absolute inset-0 bg-black/80 backdrop-blur-md" onclick="closeDeleteModal()"></div>
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-md" onclick="closeDeleteModal()"></div>
     <div
-        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[340px] bg-[#1a1a1a] border border-white/10 p-10 text-center shadow-2xl animate-slide-up">
+        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[360px] bg-white p-10 text-center shadow-2xl animate-slide-up rounded-none border border-mil-border">
         <div
-            class="w-16 h-16 bg-red-500/10 border border-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+            class="w-16 h-16 bg-red-50 border border-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                     d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
         </div>
-        <h3 class="text-white text-xl font-bold mb-2">Delete Item?</h3>
-        <p class="text-gray-400 text-sm mb-8">This action cannot be undone. Are you sure you want to remove this product
-            from your inventory?</p>
+        <h3 class="text-mil-dark text-xl font-bold mb-2">Delete Item?</h3>
+        <p class="text-mil-softDark text-sm mb-10 leading-relaxed">This action cannot be undone. Are you sure you want
+            to
+            permanently remove <strong>this product</strong>?</p>
 
-        <div class="flex flex-col gap-3">
+        <div class="flex flex-col gap-4">
             <button id="confirm-delete-btn"
-                class="w-full py-4 bg-red-500 text-white text-[11px] uppercase tracking-[2px] font-bold rounded-full hover:bg-red-600 transition-all shadow-lg shadow-red-500/20">
+                class="w-full py-4 bg-mil-dark text-white text-[11px] uppercase tracking-[2px] font-bold rounded-full hover:bg-red-600 transition-all shadow-lg hover:shadow-red-500/20">
                 Yes, Delete Item
             </button>
             <button onclick="closeDeleteModal()"
-                class="w-full py-4 text-[11px] uppercase tracking-[2px] font-bold text-gray-500 hover:text-white transition-all">
-                Keep Item
+                class="w-full py-2 text-[10px] uppercase tracking-[2px] font-bold text-mil-softDark hover:text-mil-dark transition-all">
+                Cancel
             </button>
         </div>
     </div>
@@ -646,26 +647,6 @@
         document.getElementById('time-picker-modal').classList.add('hidden');
     }
 
-    // --- Dynamic Unsplash Fetching ---
-    async function fetchUnsplashImages(query) {
-        const key = "{{ unsplash_key or '' }}";
-        if (!key) return null;
-
-        try {
-            const url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&client_id=${key}&per_page=9&orientation=squarish`;
-            const response = await fetch(url);
-            if (!response.ok) return null;
-            const data = await response.json();
-            return data.results.map(img => ({
-                id: img.id,
-                url: img.urls.regular,
-                name: img.alt_description || query
-            }));
-        } catch (err) {
-            console.error("Unsplash API Error:", err);
-            return null;
-        }
-    }
 
     // Load existing hours on startup
     window.addEventListener('DOMContentLoaded', () => {
