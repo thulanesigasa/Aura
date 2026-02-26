@@ -554,7 +554,8 @@
             let results = localMatches.map(([key, url]) => ({ id: key, url, name: key }));
 
             // 2. Try Dynamic Unsplash if API Key exists
-            if (localStorage.getItem('aura_unsplash_key')) {
+            const serverKey = "{{ unsplash_key or '' }}";
+            if (serverKey) {
                 const apiResults = await fetchUnsplashImages(q);
                 if (apiResults) results = [...results, ...apiResults];
             }
