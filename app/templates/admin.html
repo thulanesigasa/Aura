@@ -194,18 +194,18 @@
     <div class="container mx-auto px-4 sm:px-6 lg:px-8 max-w-5xl">
         <div class="flex items-center justify-between mb-8">
             <div>
-                <h2 class="text-2xl font-bold text-mil-dark">Delivery Drivers</h2>
-                <p class="text-mil-softDark text-sm mt-1">Manage your shop's drivers</p>
+                <h2 class="text-2xl font-bold text-mil-dark">Delivery Team</h2>
+                <p class="text-mil-softDark text-sm mt-1">Manage your shop's delivery people</p>
             </div>
             <button onclick="document.getElementById('add-driver-form').classList.toggle('hidden')"
                 class="px-6 py-3 bg-mil-dark text-white text-[11px] uppercase tracking-[2px] font-bold rounded-full hover:bg-mil-accent transition-all shadow-lg hover:shadow-mil-accent/20">
-                + Add Driver
+                + Add Delivery Person
             </button>
         </div>
 
         <!-- Add Driver Form (hidden by default) -->
         <div id="add-driver-form" class="hidden mb-8 bg-white border border-mil-border p-8 shadow-sm">
-            <h3 class="text-lg font-bold text-mil-dark mb-6">New Driver Account</h3>
+            <h3 class="text-lg font-bold text-mil-dark mb-6">New Delivery Person Account</h3>
             <form action="{{ url_for('main.admin_add_driver') }}" method="POST"
                 class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
@@ -234,7 +234,7 @@
                 <div class="md:col-span-2 flex gap-4 pt-2">
                     <button type="submit"
                         class="px-8 py-3 bg-mil-dark text-white text-[11px] uppercase tracking-[2px] font-bold rounded-full hover:bg-mil-accent transition-all shadow-lg hover:shadow-mil-accent/20">
-                        Create Driver Account
+                        Create Delivery Account
                     </button>
                     <button type="button" onclick="document.getElementById('add-driver-form').classList.add('hidden')"
                         class="px-6 py-3 text-[11px] uppercase tracking-[2px] font-bold text-mil-softDark hover:text-mil-dark transition-all">
@@ -270,8 +270,9 @@
         {% else %}
         <div class="bg-white border border-mil-border p-12 text-center shadow-sm">
             <p class="text-5xl mb-4">🏍️</p>
-            <p class="text-mil-softDark text-lg">No drivers yet.</p>
-            <p class="text-mil-softDark text-sm mt-2">Add your first driver above to start assigning deliveries.</p>
+            <p class="text-mil-softDark text-lg">No delivery people yet.</p>
+            <p class="text-mil-softDark text-sm mt-2">Add your first delivery person above to start assigning orders.
+            </p>
         </div>
         {% endif %}
     </div>
