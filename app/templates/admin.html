@@ -208,6 +208,7 @@
             <h3 class="text-lg font-bold text-mil-dark mb-6">New Delivery Person Account</h3>
             <form action="{{ url_for('main.admin_add_driver') }}" method="POST"
                 class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div>
                     <label class="block text-[11px] uppercase tracking-[2px] font-bold text-mil-dark mb-2">Full Name
                         *</label>
