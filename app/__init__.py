@@ -13,13 +13,20 @@ login_manager.login_view = 'main.admin_login'
 
 def create_app():
     """Application factory for the Aura platform."""
+    from werkzeug.middleware.proxy_fix import ProxyFix
+    
     app = Flask(__name__, static_folder="static", template_folder="templates")
+    # Wrap wsgi_app with ProxyFix to correctly handle X-Forwarded headers from Nginx reverse proxy
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
 
     app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "aura-dev-secret-key")
     app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
         "DATABASE_URL", "postgresql://aura_user:aura_pass@db:5432/aura_db"
     )
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    
+    # Trust reverse proxy for CSRF (allow HTTP to HTTPS and port mismatches behind proxy)
+    app.config["WTF_CSRF_SSL_STRICT"] = False
 
     # Initialize extensions
     db.init_app(app)

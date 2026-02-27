@@ -118,7 +118,7 @@
                 <h2 class="text-3xl font-bold text-mil-dark">Available <span class="font-light">Products</span></h2>
             </div>
             {% if products %}
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div class="space-y-6">
                 {% for product in products %}
                 <div class="portfolio-card p-6 flex flex-row items-center justify-between group">
                     <div class="flex items-center gap-6 flex-1">
@@ -143,7 +143,7 @@
                                 <p class="text-base font-bold text-mil-dark">R{{ "%.2f"|format(product.price) }}</p>
                                 {% if product.category %}
                                 <span
-                                    class="text-[9px] uppercase tracking-[1px] text-mil-softDark bg-[rgba(0,0,0,0.03)] px-2 py-1 rounded">{{
+                                    class="text-[9px] uppercase tracking-[1px] text-mil-softDark bg-[rgba(0,0,0,0.03)] px-2 py-1 rounded whitespace-nowrap flex-shrink-0 w-max">{{
                                     product.category }}</span>
                                 {% endif %}
                             </div>
@@ -156,11 +156,11 @@
                         <div id="product-actions-{{ product.id }}"
                             class="flex items-center bg-mil-dark rounded-full overflow-hidden transition-all h-10">
                             <!-- Show "Add" if not in cart -->
-                            <button
-                                onclick="auraCart.addItem({{ product.id }}, {{ product.name|tojson|safe }}, {{ product.price }}, {{ shop.id }}, '{{ product.image_url if product.image_url else "
-                                https://api.dicebear.com/7.x/icons/svg?seed=" ~ product.name|urlencode ~ "
-                                &backgroundColor=f8faff" }}')"
-                                class="add-to-cart-btn px-6 py-2 text-white text-[10px] uppercase tracking-[2px] font-bold hover:bg-mil-accent transition-all">
+                            <button data-id="{{ product.id }}" data-name="{{ product.name }}"
+                                data-price="{{ product.price }}" data-shop="{{ shop.id }}"
+                                data-image="{{ product.image_url if product.image_url else ('https://api.dicebear.com/7.x/icons/svg?seed=' ~ product.name|urlencode|replace('%', '') ~ '&backgroundColor=f8faff') }}"
+                                onclick="auraCart.addItem(this.dataset.id, this.dataset.name, this.dataset.price, this.dataset.shop, this.dataset.image)"
+                                class="add-to-cart-btn px-6 py-2 text-white text-[10px] uppercase tracking-[2px] font-bold hover:bg-mil-accent transition-all whitespace-nowrap w-full h-full flex items-center justify-center">
                                 Add to Cart
                             </button>
                             <!-- Quantity selector (Hidden by default, shown via JS) -->

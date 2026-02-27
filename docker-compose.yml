@@ -26,6 +26,8 @@ services:
       - DATABASE_URL=postgresql://aura_user:aura_pass@db:5432/aura_db
     env_file:
       - .env
+    volumes:
+      - ./app:/app/app
     depends_on:
       db:
         condition: service_healthy

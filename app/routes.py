@@ -201,8 +201,9 @@ def api_checkout():
 
 @bp.route("/order-success/<int:order_id>")
 def order_success(order_id):
-    """Simple confirmation page."""
-    return render_template("order_success.html", order_id=order_id)
+    """View status of a placed order."""
+    order = Order.query.get_or_404(order_id)
+    return render_template("order_status.html", order=order)
 
 
 # ── Admin endpoints ──────────────────────────────────────────────────────────
@@ -399,7 +400,8 @@ def admin_dashboard():
     """Manage shop profile/inventory."""
     shop = Shop.query.get(current_user.shop_id)
     products = _fetch_products_for_shop(shop.id, include_archived=True)
-    return render_template("admin.html", shop=shop, products=products)
+    orders = Order.query.filter_by(shop_id=shop.id).order_by(Order.created_at.desc()).all()
+    return render_template("admin.html", shop=shop, products=products, orders=orders)
 
 
 @bp.route("/admin/update-hours", methods=["POST"])
@@ -417,15 +419,50 @@ def update_hours():
     flash("Business hours updated.")
     return redirect(url_for("main.admin_dashboard"))
 
+@bp.route("/admin/api/order/<int:order_id>/status", methods=["POST"])
+@login_required
+def update_order_status(order_id):
+    """Update order status (e.g. pending to completed)."""
+    order = Order.query.get_or_404(order_id)
+    if order.shop_id != current_user.shop_id:
+        return jsonify({"error": "Unauthorized"}), 403
+    
+    data = request.get_json()
+    new_status = data.get("status") if data else request.form.get("status")
+    
+    if new_status in ['pending', 'completed', 'cancelled']:
+        order.status = new_status
+        db.session.commit()
+        if request.is_json:
+            return jsonify({"success": True, "status": order.status})
+        flash(f"Order #{order.id} status updated to {new_status}.")
+    else:
+        if request.is_json:
+            return jsonify({"error": "Invalid status"}), 400
+        flash("Invalid status update.")
+        
+    return redirect(url_for("main.admin_dashboard"))
+
 
 @bp.route("/admin/add-product", methods=["POST"])
 @login_required
 def add_product():
     """Add a new product to the shop."""
-    name = request.form.get("name")
-    price = request.form.get("price")
-    category = request.form.get("category")
-    image_url = request.form.get("image_url")
+    print("DEBUG request.is_json:", request.is_json, flush=True)
+    print("DEBUG request.data:", request.get_data(), flush=True)
+    print("DEBUG request.content_type:", request.content_type, flush=True)
+    
+    if request.is_json:
+        data = request.json
+        name = data.get("name")
+        price = data.get("price")
+        category = data.get("category")
+        image_url = data.get("image_url")
+    else:
+        name = request.form.get("name")
+        price = request.form.get("price")
+        category = request.form.get("category")
+        image_url = request.form.get("image_url")
     
     new_product = Product(
         shop_id=current_user.shop_id,
@@ -437,6 +474,9 @@ def add_product():
     db.session.add(new_product)
     db.session.commit()
     
+    if request.is_json:
+        return Response(json.dumps({"success": True}), status=200, mimetype="application/json")
+        
     flash(f"Product '{name}' added.")
     return redirect(url_for("main.admin_dashboard"))
 
