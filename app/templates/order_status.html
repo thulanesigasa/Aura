@@ -59,7 +59,7 @@
         </div>
 
         <div class="mt-12 text-center">
-            <a href="{{ url_for('main.shop_view', slug=order.shop.slug) }}"
+            <a href="{{ url_for('main.shop_detail', shop_name=order.shop.slug) }}"
                 class="inline-flex items-center justify-center px-8 py-4 bg-[rgba(255,255,255,0.05)] text-white text-[11px] uppercase tracking-[3px] font-bold rounded-full hover:bg-[rgba(255,255,255,0.1)] transition-all border border-white/10 group">
                 <svg class="w-4 h-4 mr-3 group-hover:-translate-x-1 transition-transform" fill="none"
                     stroke="currentColor" viewBox="0 0 24 24">
