@@ -52,22 +52,21 @@
                     <p class="text-mil-accent font-bold text-sm mt-2">R{{ "%.2f"|format(order.total) }}</p>
                 </div>
 
-                <!-- Action buttons -->
                 <div class="flex gap-3">
                     {% if order.status == 'assigned' %}
                     <button onclick="updateStatus({{ order.id }}, 'picked_up')"
                         class="flex-1 py-3 bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 font-bold text-sm rounded-xl hover:bg-yellow-500/20 transition-all">
-                        ✅ Picked Up
+                        Order in Progress
                     </button>
                     {% elif order.status == 'picked_up' %}
                     <button onclick="updateStatus({{ order.id }}, 'on_the_way')"
                         class="flex-1 py-3 bg-mil-accent/10 border border-mil-accent/20 text-mil-accent font-bold text-sm rounded-xl hover:bg-mil-accent/20 transition-all">
-                        🚗 On My Way
+                        On Our Way
                     </button>
                     {% elif order.status == 'on_the_way' %}
                     <button onclick="updateStatus({{ order.id }}, 'delivered')"
                         class="flex-1 py-3 bg-green-500/10 border border-green-500/20 text-green-400 font-bold text-sm rounded-xl hover:bg-green-500/20 transition-all">
-                        🏁 Delivered
+                        Mark as Delivered
                     </button>
                     {% endif %}
                 </div>
