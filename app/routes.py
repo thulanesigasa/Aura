@@ -6,7 +6,7 @@ import pyotp
 import qrcode
 import io
 import base64
-from flask import Blueprint, render_template, Response, abort, request, redirect, url_for, session, flash
+from flask import Blueprint, render_template, Response, abort, request, redirect, url_for, session, flash, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from sqlalchemy import func
 from .models import db, Shop, Product, User, Order, OrderItem
