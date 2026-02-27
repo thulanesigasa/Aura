@@ -189,7 +189,93 @@
     </div>
 </section>
 
+<!-- Drivers Section -->
+<section class="bg-mil-softBg py-12 border-t border-mil-border">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 max-w-5xl">
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h2 class="text-2xl font-bold text-mil-dark">Delivery Drivers</h2>
+                <p class="text-mil-softDark text-sm mt-1">Manage your shop's drivers</p>
+            </div>
+            <button onclick="document.getElementById('add-driver-form').classList.toggle('hidden')"
+                class="px-6 py-3 bg-mil-dark text-white text-[11px] uppercase tracking-[2px] font-bold rounded-full hover:bg-mil-accent transition-all shadow-lg hover:shadow-mil-accent/20">
+                + Add Driver
+            </button>
+        </div>
 
+        <!-- Add Driver Form (hidden by default) -->
+        <div id="add-driver-form" class="hidden mb-8 bg-white border border-mil-border p-8 shadow-sm">
+            <h3 class="text-lg font-bold text-mil-dark mb-6">New Driver Account</h3>
+            <form action="{{ url_for('main.admin_add_driver') }}" method="POST"
+                class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                    <label class="block text-[11px] uppercase tracking-[2px] font-bold text-mil-dark mb-2">Full Name
+                        *</label>
+                    <input type="text" name="name" required placeholder="e.g. Sipho Dlamini"
+                        class="w-full bg-mil-softBg border-b border-mil-border py-3 px-4 focus:outline-none focus:border-mil-accent text-mil-dark">
+                </div>
+                <div>
+                    <label class="block text-[11px] uppercase tracking-[2px] font-bold text-mil-dark mb-2">Phone</label>
+                    <input type="text" name="phone" placeholder="e.g. 0761234567"
+                        class="w-full bg-mil-softBg border-b border-mil-border py-3 px-4 focus:outline-none focus:border-mil-accent text-mil-dark">
+                </div>
+                <div>
+                    <label class="block text-[11px] uppercase tracking-[2px] font-bold text-mil-dark mb-2">Email
+                        *</label>
+                    <input type="email" name="email" required placeholder="driver@email.com"
+                        class="w-full bg-mil-softBg border-b border-mil-border py-3 px-4 focus:outline-none focus:border-mil-accent text-mil-dark">
+                </div>
+                <div>
+                    <label class="block text-[11px] uppercase tracking-[2px] font-bold text-mil-dark mb-2">Password
+                        *</label>
+                    <input type="password" name="password" required placeholder="Min. 6 characters"
+                        class="w-full bg-mil-softBg border-b border-mil-border py-3 px-4 focus:outline-none focus:border-mil-accent text-mil-dark">
+                </div>
+                <div class="md:col-span-2 flex gap-4 pt-2">
+                    <button type="submit"
+                        class="px-8 py-3 bg-mil-dark text-white text-[11px] uppercase tracking-[2px] font-bold rounded-full hover:bg-mil-accent transition-all shadow-lg hover:shadow-mil-accent/20">
+                        Create Driver Account
+                    </button>
+                    <button type="button" onclick="document.getElementById('add-driver-form').classList.add('hidden')"
+                        class="px-6 py-3 text-[11px] uppercase tracking-[2px] font-bold text-mil-softDark hover:text-mil-dark transition-all">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Drivers List -->
+        {% if drivers %}
+        <div class="space-y-3">
+            {% for driver in drivers %}
+            <div class="flex items-center justify-between bg-white border border-mil-border px-6 py-4 shadow-sm">
+                <div class="flex items-center gap-4">
+                    <div
+                        class="w-10 h-10 bg-mil-accent/10 border border-mil-accent/20 rounded-full flex items-center justify-center text-lg">
+                        🏍️</div>
+                    <div>
+                        <p class="font-bold text-mil-dark">{{ driver.name }}</p>
+                        <p class="text-mil-softDark text-xs">{{ driver.email }}{% if driver.phone %} · {{ driver.phone
+                            }}{% endif %}</p>
+                    </div>
+                </div>
+                <span
+                    class="text-[10px] font-bold uppercase tracking-[1px] px-3 py-1 rounded-full
+                    {% if driver.is_active %}bg-green-50 text-green-600 border border-green-200{% else %}bg-gray-100 text-gray-500 border border-gray-200{% endif %}">
+                    {{ 'Active' if driver.is_active else 'Inactive' }}
+                </span>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="bg-white border border-mil-border p-12 text-center shadow-sm">
+            <p class="text-5xl mb-4">🏍️</p>
+            <p class="text-mil-softDark text-lg">No drivers yet.</p>
+            <p class="text-mil-softDark text-sm mt-2">Add your first driver above to start assigning deliveries.</p>
+        </div>
+        {% endif %}
+    </div>
+</section>
 
 <!-- Data bridge for business hours (Fixes linting) -->
 <div id="shop-hours-data" data-hours='{{ (shop.opening_hours or "{}") | safe }}' class="hidden"></div>
@@ -907,6 +993,28 @@
                             <span class="text-lg font-bold text-mil-accent">R{{ "%.2f"|format(order.total) }}</span>
                         </div>
                     </div>
+                    <!-- Assign Driver -->
+                    {% if drivers %}
+                    <div class="px-4 pb-4">
+                        <div class="flex gap-2">
+                            <select id="driver-select-{{ order.id }}"
+                                class="flex-1 bg-[rgba(0,0,0,0.4)] border border-white/10 text-white/70 text-[11px] rounded-lg px-3 py-2 focus:outline-none focus:border-mil-accent">
+                                <option value="">🏍️ Assign Driver…</option>
+                                {% for d in drivers %}
+                                <option value="{{ d.id }}" {% if order.driver_id==d.id %}selected{% endif %}>{{ d.name
+                                    }}</option>
+                                {% endfor %}
+                            </select>
+                            <button onclick="assignDriver({{ order.id }})"
+                                class="px-4 py-2 bg-mil-accent/10 border border-mil-accent/20 text-mil-accent text-[11px] font-bold rounded-lg hover:bg-mil-accent/20 transition-all">
+                                Assign
+                            </button>
+                        </div>
+                        {% if order.driver %}
+                        <p class="text-[10px] text-green-400/70 mt-2">✓ Assigned to {{ order.driver.name }}</p>
+                        {% endif %}
+                    </div>
+                    {% endif %}
                 </div>
                 {% endfor %}
                 {% else %}
@@ -991,7 +1099,26 @@
             drawer.classList.remove('translate-x-0');
             setTimeout(() => {
                 sidebar.classList.add('hidden');
-            }, 500); // Wait for transition
+            }, 500);
+        }
+    }
+
+    async function assignDriver(orderId) {
+        const select = document.getElementById(`driver-select-${orderId}`);
+        const driverId = select.value;
+        if (!driverId) { showToast('Please select a driver first', 'error'); return; }
+
+        const res = await fetch(`/admin/api/order/${orderId}/assign`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
+            body: JSON.stringify({ driver_id: parseInt(driverId) })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            showToast(`Driver ${data.driver_name} assigned to #${orderId}`);
+            setTimeout(() => window.location.reload(), 1200);
+        } else {
+            showToast(data.error || 'Failed to assign driver', 'error');
         }
     }
 </script>

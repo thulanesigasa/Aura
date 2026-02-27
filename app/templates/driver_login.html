@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Driver Login | Aura{% endblock %}
+{% block floating_action %}{% endblock %}
+
+{% block content %}
+<section class="min-h-screen flex items-center justify-center p-6 bg-[#111]">
+    <div class="w-full max-w-md">
+        <div class="bg-[rgba(26,26,26,0.95)] border border-white/5 rounded-3xl p-10 shadow-2xl">
+            <div class="text-center mb-10">
+                <div
+                    class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-mil-accent/10 text-mil-accent mb-6">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <h1 class="text-3xl font-bold text-white tracking-tight">Driver Portal</h1>
+                <p class="text-white/40 text-sm mt-2">Sign in to manage your deliveries</p>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}{% for cat, msg in messages %}
+            <div
+                class="mb-6 px-4 py-3 rounded-xl text-sm font-medium
+                {% if cat == 'danger' %}bg-red-500/10 border border-red-500/20 text-red-400{% else %}bg-green-500/10 border border-green-500/20 text-green-400{% endif %}">
+                {{ msg }}
+            </div>
+            {% endfor %}{% endif %}
+            {% endwith %}
+
+            <form method="POST" class="space-y-5">
+                <div>
+                    <label class="text-[10px] font-bold text-white/50 uppercase tracking-[2px] block mb-2">Email</label>
+                    <input type="email" name="email" required
+                        class="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-4 text-white focus:outline-none focus:border-mil-accent transition-all placeholder:text-white/20"
+                        placeholder="driver@email.com">
+                </div>
+                <div>
+                    <label
+                        class="text-[10px] font-bold text-white/50 uppercase tracking-[2px] block mb-2">Password</label>
+                    <input type="password" name="password" required
+                        class="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-4 text-white focus:outline-none focus:border-mil-accent transition-all placeholder:text-white/20"
+                        placeholder="••••••••">
+                </div>
+                <button type="submit"
+                    class="w-full bg-mil-accent hover:bg-orange-600 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-mil-accent/20 mt-2">
+                    Sign In
+                </button>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

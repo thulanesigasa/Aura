@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}Driver Dashboard | Aura{% endblock %}
+{% block floating_action %}{% endblock %}
+
+{% block content %}
+<section class="min-h-screen bg-[#111] pt-6 pb-24 px-4">
+    <div class="max-w-2xl mx-auto">
+
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h1 class="text-2xl font-bold text-white">Hey, {{ driver.name }} 👋</h1>
+                <p class="text-white/40 text-sm mt-1">Your active deliveries</p>
+            </div>
+            <a href="{{ url_for('main.driver_logout') }}"
+                class="text-[11px] uppercase tracking-[2px] font-bold text-white/40 hover:text-red-400 transition-colors">
+                Logout
+            </a>
+        </div>
+
+        <!-- Active Orders -->
+        {% if active_orders %}
+        <div class="space-y-4 mb-10" id="activeOrders">
+            {% for order in active_orders %}
+            <div class="bg-[rgba(26,26,26,0.9)] border border-white/5 rounded-2xl p-6 order-card"
+                data-order-id="{{ order.id }}">
+                <div class="flex items-start justify-between mb-4">
+                    <div>
+                        <p class="text-mil-accent font-bold text-lg">#{{ order.id }}</p>
+                        <p class="text-white font-semibold">{{ order.customer_name }}</p>
+                        <p class="text-white/50 text-sm">{{ order.customer_phone }}</p>
+                    </div>
+                    <span class="status-badge text-[10px] font-bold uppercase tracking-[1px] px-3 py-1.5 rounded-full
+                        {% if order.status == 'assigned' %} bg-blue-500/10 text-blue-400 border border-blue-500/20
+                        {% elif order.status == 'picked_up' %} bg-yellow-500/10 text-yellow-400 border border-yellow-500/20
+                        {% elif order.status == 'on_the_way' %} bg-mil-accent/10 text-mil-accent border border-mil-accent/20
+                        {% else %} bg-green-500/10 text-green-400 border border-green-500/20 {% endif %}">
+                        {{ order.status.replace('_', ' ') }}
+                    </span>
+                </div>
+
+                <div class="bg-white/3 rounded-xl p-3 mb-4 border border-white/5">
+                    <p class="text-[10px] text-white/40 uppercase tracking-[1.5px] mb-1">Deliver to</p>
+                    <p class="text-white/80 text-sm font-medium">{{ order.delivery_address }}</p>
+                </div>
+
+                <!-- Items summary -->
+                <div class="mb-5 space-y-1">
+                    {% for item in order.items %}
+                    <p class="text-white/50 text-xs">{{ item.quantity }}× {{ item.product.name }}</p>
+                    {% endfor %}
+                    <p class="text-mil-accent font-bold text-sm mt-2">R{{ "%.2f"|format(order.total) }}</p>
+                </div>
+
+                <!-- Action buttons -->
+                <div class="flex gap-3">
+                    {% if order.status == 'assigned' %}
+                    <button onclick="updateStatus({{ order.id }}, 'picked_up')"
+                        class="flex-1 py-3 bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 font-bold text-sm rounded-xl hover:bg-yellow-500/20 transition-all">
+                        ✅ Picked Up
+                    </button>
+                    {% elif order.status == 'picked_up' %}
+                    <button onclick="updateStatus({{ order.id }}, 'on_the_way')"
+                        class="flex-1 py-3 bg-mil-accent/10 border border-mil-accent/20 text-mil-accent font-bold text-sm rounded-xl hover:bg-mil-accent/20 transition-all">
+                        🚗 On My Way
+                    </button>
+                    {% elif order.status == 'on_the_way' %}
+                    <button onclick="updateStatus({{ order.id }}, 'delivered')"
+                        class="flex-1 py-3 bg-green-500/10 border border-green-500/20 text-green-400 font-bold text-sm rounded-xl hover:bg-green-500/20 transition-all">
+                        🏁 Delivered
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-20">
+            <p class="text-5xl mb-4">🏍️</p>
+            <p class="text-white/40 text-lg">No active deliveries right now.</p>
+            <p class="text-white/20 text-sm mt-2">Check back soon for new orders.</p>
+        </div>
+        {% endif %}
+
+        <!-- Past Orders -->
+        {% if past_orders %}
+        <h2 class="text-[11px] uppercase tracking-[2px] text-white/30 font-bold mb-4">Recent Deliveries</h2>
+        <div class="space-y-2">
+            {% for order in past_orders %}
+            <div class="flex items-center justify-between bg-white/2 border border-white/5 rounded-xl px-5 py-4">
+                <div>
+                    <p class="text-white/60 font-bold text-sm">#{{ order.id }} — {{ order.customer_name }}</p>
+                    <p class="text-white/30 text-xs">{{ order.created_at.strftime('%d %b %Y') }}</p>
+                </div>
+                <span class="text-[10px] font-bold uppercase px-2.5 py-1 rounded-full
+                    {% if order.status == 'delivered' %}bg-green-500/10 text-green-400 border border-green-500/20
+                    {% else %}bg-red-500/10 text-red-400 border border-red-500/20{% endif %}">
+                    {{ order.status }}
+                </span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // ── Status updates ────────────────────────────────────────────────────────
+    async function updateStatus(orderId, newStatus) {
+        const res = await fetch(`/driver/api/order/${orderId}/status`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: newStatus })
+        });
+        if (res.ok) {
+            // Reload to refresh the card buttons and badge
+            window.location.reload();
+        } else {
+            alert('Failed to update status. Please try again.');
+        }
+    }
+
+    // ── GPS Location sharing ─────────────────────────────────────────────────
+    // Share location for all active orders that are currently 'on_the_way'
+    const onTheWayOrderIds = [
+        {% for order in active_orders %}
+    {% if order.status == 'on_the_way' %} { { order.id } }, {% endif %}
+    {% endfor %}
+];
+
+    function postLocation(lat, lng) {
+        onTheWayOrderIds.forEach(orderId => {
+            fetch('/driver/api/location', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ order_id: orderId, lat, lng })
+            });
+        });
+    }
+
+    if (onTheWayOrderIds.length > 0 && navigator.geolocation) {
+        navigator.geolocation.watchPosition(
+            pos => postLocation(pos.coords.latitude, pos.coords.longitude),
+            err => console.warn('Geolocation error:', err),
+            { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+        );
+    }
+</script>
+{% endblock %}

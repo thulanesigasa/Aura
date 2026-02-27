@@ -9,7 +9,7 @@ import base64
 from flask import Blueprint, render_template, Response, abort, request, redirect, url_for, session, flash, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from sqlalchemy import func
-from .models import db, Shop, Product, User, Order, OrderItem
+from .models import db, Shop, Product, User, Order, OrderItem, Driver
 from .seo_utils import generate_sitemap_xml, build_local_business_jsonld
 from . import limiter
 
@@ -427,9 +427,12 @@ def admin_dashboard():
     shop = Shop.query.get(current_user.shop_id)
     products = _fetch_products_for_shop(shop.id, include_archived=True)
     all_orders = Order.query.filter_by(shop_id=shop.id).order_by(Order.created_at.desc()).all()
-    pending_orders = [o for o in all_orders if o.status == 'pending']
-    past_orders = [o for o in all_orders if o.status != 'pending']
-    return render_template("admin.html", shop=shop, products=products, pending_orders=pending_orders, past_orders=past_orders)
+    pending_orders = [o for o in all_orders if o.status not in ('delivered', 'cancelled')]
+    past_orders = [o for o in all_orders if o.status in ('delivered', 'cancelled')]
+    drivers = Driver.query.filter_by(shop_id=shop.id, is_active=True).all()
+    return render_template("admin.html", shop=shop, products=products,
+                           pending_orders=pending_orders, past_orders=past_orders,
+                           drivers=drivers)
 
 
 @bp.route("/admin/update-hours", methods=["POST"])
@@ -609,6 +612,166 @@ def sitemap():
 def robots():
     """Serve robots.txt."""
     return bp.send_static_file("robots.txt")
+
+
+# ── Public Order Location API ─────────────────────────────────────────────────
+
+@bp.route("/api/order/<int:order_id>/location")
+def order_location(order_id):
+    """Poll this endpoint every 5s to get driver GPS + order status."""
+    order = Order.query.get_or_404(order_id)
+    return jsonify({
+        "status": order.status,
+        "lat": order.driver_lat,
+        "lng": order.driver_lng,
+        "driver_name": order.driver.name if order.driver else None,
+    })
+
+
+# ── Admin Driver Management ───────────────────────────────────────────────────
+
+@bp.route("/admin/drivers/add", methods=["POST"])
+@login_required
+def admin_add_driver():
+    """Create a new driver for this shop."""
+    name = request.form.get("name", "").strip()
+    phone = request.form.get("phone", "").strip()
+    email = request.form.get("email", "").strip()
+    password = request.form.get("password", "")
+
+    if not name or not email or not password:
+        flash("Name, email and password are required.", "danger")
+        return redirect(url_for("main.admin_dashboard"))
+
+    if Driver.query.filter_by(email=email).first():
+        flash("A driver with that email already exists.", "danger")
+        return redirect(url_for("main.admin_dashboard"))
+
+    driver = Driver(shop_id=current_user.shop_id, name=name, phone=phone, email=email)
+    driver.set_password(password)
+    db.session.add(driver)
+    db.session.commit()
+    flash(f"Driver '{name}' added successfully.", "success")
+    return redirect(url_for("main.admin_dashboard"))
+
+
+@bp.route("/admin/api/order/<int:order_id>/assign", methods=["POST"])
+@login_required
+def admin_assign_driver(order_id):
+    """Assign a driver to a pending order."""
+    order = Order.query.get_or_404(order_id)
+    if order.shop_id != current_user.shop_id:
+        return jsonify({"error": "Unauthorized"}), 403
+
+    data = request.get_json() or {}
+    driver_id = data.get("driver_id")
+    driver = Driver.query.get(driver_id) if driver_id else None
+
+    if not driver or driver.shop_id != current_user.shop_id:
+        return jsonify({"error": "Invalid driver"}), 400
+
+    order.driver_id = driver.id
+    order.status = "assigned"
+    db.session.commit()
+    return jsonify({"success": True, "status": order.status, "driver_name": driver.name})
+
+
+# ── Driver Portal ─────────────────────────────────────────────────────────────
+
+@bp.route("/driver/login", methods=["GET", "POST"])
+def driver_login():
+    """Driver login — uses plain session, not Flask-Login."""
+    if session.get("driver_id"):
+        return redirect(url_for("main.driver_dashboard"))
+
+    if request.method == "POST":
+        email = request.form.get("email", "").strip()
+        password = request.form.get("password", "")
+        driver = Driver.query.filter_by(email=email).first()
+        if driver and driver.check_password(password) and driver.is_active:
+            session["driver_id"] = driver.id
+            session["driver_name"] = driver.name
+            return redirect(url_for("main.driver_dashboard"))
+        flash("Invalid credentials.", "danger")
+
+    return render_template("driver_login.html")
+
+
+@bp.route("/driver/logout")
+def driver_logout():
+    session.pop("driver_id", None)
+    session.pop("driver_name", None)
+    return redirect(url_for("main.driver_login"))
+
+
+@bp.route("/driver/dashboard")
+def driver_dashboard():
+    """Driver sees their assigned orders."""
+    driver_id = session.get("driver_id")
+    if not driver_id:
+        return redirect(url_for("main.driver_login"))
+
+    driver = Driver.query.get_or_404(driver_id)
+    active_orders = Order.query.filter(
+        Order.driver_id == driver_id,
+        Order.status.in_(["assigned", "picked_up", "on_the_way"])
+    ).order_by(Order.created_at.desc()).all()
+    past_orders = Order.query.filter(
+        Order.driver_id == driver_id,
+        Order.status.in_(["delivered", "cancelled"])
+    ).order_by(Order.created_at.desc()).limit(10).all()
+
+    return render_template("driver_dashboard.html",
+                           driver=driver,
+                           active_orders=active_orders,
+                           past_orders=past_orders)
+
+
+@bp.route("/driver/api/order/<int:order_id>/status", methods=["POST"])
+def driver_update_status(order_id):
+    """Driver updates order status from their dashboard."""
+    driver_id = session.get("driver_id")
+    if not driver_id:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    order = Order.query.get_or_404(order_id)
+    if order.driver_id != driver_id:
+        return jsonify({"error": "Forbidden"}), 403
+
+    data = request.get_json() or {}
+    new_status = data.get("status")
+    allowed = ["picked_up", "on_the_way", "delivered"]
+    if new_status not in allowed:
+        return jsonify({"error": "Invalid status"}), 400
+
+    order.status = new_status
+    db.session.commit()
+    return jsonify({"success": True, "status": order.status})
+
+
+@bp.route("/driver/api/location", methods=["POST"])
+def driver_post_location():
+    """Driver browser POSTs GPS coords here every 5 seconds."""
+    driver_id = session.get("driver_id")
+    if not driver_id:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json() or {}
+    order_id = data.get("order_id")
+    lat = data.get("lat")
+    lng = data.get("lng")
+
+    if not order_id or lat is None or lng is None:
+        return jsonify({"error": "Missing fields"}), 400
+
+    order = Order.query.get(order_id)
+    if not order or order.driver_id != driver_id:
+        return jsonify({"error": "Forbidden"}), 403
+
+    order.driver_lat = lat
+    order.driver_lng = lng
+    db.session.commit()
+    return jsonify({"success": True})
 
 
 # ── Error handlers ───────────────────────────────────────────────────────────
