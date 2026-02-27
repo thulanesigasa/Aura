@@ -207,18 +207,29 @@ def order_success(order_id):
 
 @bp.route("/track", methods=["GET", "POST"])
 def track_order():
-    """Client-facing order tracking."""
+    """Client-facing order tracking. Supports lookup by order ID or phone number."""
+    orders_by_phone = None
     if request.method == "POST":
-        order_id = request.form.get("order_id")
-        if order_id and order_id.isdigit():
-            order = Order.query.get(order_id)
-            if order:
-                return redirect(url_for("main.order_success", order_id=order.id))
-            flash("Order not found. Please check the number and try again.", "danger")
+        lookup = request.form.get("order_id", "").strip()
+        if lookup:
+            if lookup.isdigit():
+                # Try as order ID first
+                order = Order.query.get(int(lookup))
+                if order:
+                    return redirect(url_for("main.order_success", order_id=order.id))
+                # Fall back: maybe they typed their phone number which is all digits
+                orders_by_phone = Order.query.filter_by(customer_phone=lookup).order_by(Order.created_at.desc()).all()
+                if not orders_by_phone:
+                    flash("No orders found. Check your order number or phone number and try again.", "danger")
+            else:
+                # Non-digit input — treat as phone number
+                orders_by_phone = Order.query.filter_by(customer_phone=lookup).order_by(Order.created_at.desc()).all()
+                if not orders_by_phone:
+                    flash("No orders found for that phone number.", "danger")
         else:
-            flash("Please enter a valid Order ID.", "danger")
-    
-    return render_template("track_order.html")
+            flash("Please enter your order number or phone number.", "danger")
+
+    return render_template("track_order.html", orders_by_phone=orders_by_phone)
 
 
 # ── Admin endpoints ──────────────────────────────────────────────────────────

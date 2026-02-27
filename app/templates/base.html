@@ -105,8 +105,10 @@
                     Us</a>
                 <a href="/join" class="text-xl font-bold text-mil-light hover:text-mil-accent transition-colors">List
                     Your Spaza</a>
+                {% if not current_user.is_authenticated %}
                 <a href="/track" class="text-xl font-bold text-mil-light hover:text-mil-accent transition-colors">Track
                     Order</a>
+                {% endif %}
                 <a href="/contact"
                     class="text-xl font-bold text-mil-light hover:text-mil-accent transition-colors">Contact</a>
             </nav>
@@ -131,7 +133,9 @@
                     <a href="/" class="hover:text-mil-accent transition-colors">Home</a>
                     <a href="/contact" class="hover:text-mil-accent transition-colors">Contact</a>
                     <a href="/join" class="hover:text-mil-accent transition-colors">Join</a>
+                    {% if not current_user.is_authenticated %}
                     <a href="/track" class="hover:text-mil-accent transition-colors">Track Order</a>
+                    {% endif %}
                 </div>
             </div>
 

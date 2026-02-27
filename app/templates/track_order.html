@@ -30,7 +30,8 @@
                 </div>
                 <h1 class="text-3xl font-bold text-mil-light tracking-tight mb-2">Track Order</h1>
                 <p class="text-white/40 text-[13px] leading-relaxed">
-                    Enter the order number from your receipt to see live updates on your delivery status.
+                    Enter your <span class="text-mil-accent">order number</span> or the <span
+                        class="text-mil-accent">phone number</span> you used when ordering.
                 </p>
             </div>
 
@@ -55,12 +56,12 @@
 
                 <div class="space-y-2">
                     <label for="order_id"
-                        class="text-[10px] font-bold text-white/50 uppercase tracking-[2px] ml-1">Order Number</label>
+                        class="text-[10px] font-bold text-white/50 uppercase tracking-[2px] ml-1">Order Number or
+                        Phone</label>
                     <div class="relative">
                         <span
                             class="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-mil-accent opacity-50">#</span>
-                        <input type="text" id="order_id" name="order_id" required inputmode="numeric" pattern="[0-9]*"
-                            placeholder="e.g. 52"
+                        <input type="text" id="order_id" name="order_id" required placeholder="e.g. 52 or 0761234567"
                             class="w-full bg-white/5 border border-white/10 rounded-xl py-4 pl-10 pr-4 text-white text-lg font-bold tracking-wider focus:outline-none focus:border-mil-accent focus:bg-white/10 transition-all placeholder:text-white/20 placeholder:font-normal">
                     </div>
                 </div>
@@ -77,6 +78,36 @@
             </form>
 
         </div>
+
+        <!-- Phone lookup results -->
+        {% if orders_by_phone %}
+        <div class="mt-6 space-y-3">
+            <p class="text-white/50 text-[11px] uppercase tracking-[2px] text-center">{{ orders_by_phone|length }}
+                order(s) found</p>
+            {% for order in orders_by_phone %}
+            <a href="{{ url_for('main.order_success', order_id=order.id) }}"
+                class="flex items-center justify-between bg-[rgba(26,26,26,0.8)] border border-white/5 rounded-2xl px-6 py-4 hover:border-mil-accent/40 hover:bg-white/5 transition-all group">
+                <div>
+                    <p class="text-white font-bold text-sm">#{{ order.id }} &mdash; {{ order.shop.name }}</p>
+                    <p class="text-white/40 text-[11px] mt-0.5">{{ order.created_at.strftime('%d %b %Y, %H:%M') }}</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="text-[10px] font-bold uppercase tracking-[1px] px-2.5 py-1 rounded-full
+                        {% if order.status == 'pending' %} bg-yellow-500/10 text-yellow-400 border border-yellow-500/20
+                        {% elif order.status == 'completed' %} bg-green-500/10 text-green-400 border border-green-500/20
+                        {% else %} bg-red-500/10 text-red-400 border border-red-500/20 {% endif %}">
+                        {{ order.status }}
+                    </span>
+                    <svg class="w-4 h-4 text-mil-accent group-hover:translate-x-1 transition-transform" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% endif %}
+
     </div>
 </section>
 {% endblock %}
