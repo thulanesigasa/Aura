@@ -205,6 +205,21 @@ def order_success(order_id):
     order = Order.query.get_or_404(order_id)
     return render_template("order_status.html", order=order)
 
+@bp.route("/track", methods=["GET", "POST"])
+def track_order():
+    """Client-facing order tracking."""
+    if request.method == "POST":
+        order_id = request.form.get("order_id")
+        if order_id and order_id.isdigit():
+            order = Order.query.get(order_id)
+            if order:
+                return redirect(url_for("main.order_success", order_id=order.id))
+            flash("Order not found. Please check the number and try again.", "danger")
+        else:
+            flash("Please enter a valid Order ID.", "danger")
+    
+    return render_template("track_order.html")
+
 
 # ── Admin endpoints ──────────────────────────────────────────────────────────
 
@@ -400,8 +415,10 @@ def admin_dashboard():
     """Manage shop profile/inventory."""
     shop = Shop.query.get(current_user.shop_id)
     products = _fetch_products_for_shop(shop.id, include_archived=True)
-    orders = Order.query.filter_by(shop_id=shop.id).order_by(Order.created_at.desc()).all()
-    return render_template("admin.html", shop=shop, products=products, orders=orders)
+    all_orders = Order.query.filter_by(shop_id=shop.id).order_by(Order.created_at.desc()).all()
+    pending_orders = [o for o in all_orders if o.status == 'pending']
+    past_orders = [o for o in all_orders if o.status != 'pending']
+    return render_template("admin.html", shop=shop, products=products, pending_orders=pending_orders, past_orders=past_orders)
 
 
 @bp.route("/admin/update-hours", methods=["POST"])
