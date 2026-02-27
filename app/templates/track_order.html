@@ -94,12 +94,14 @@
                 <div class="flex items-center gap-3">
                     <span class="text-[10px] font-bold uppercase tracking-[1px] px-2.5 py-1 rounded-full
                         {% if order.status == 'pending' %} bg-yellow-500/10 text-yellow-400 border border-yellow-500/20
+                        {% elif order.status == 'ready' %} bg-blue-500/10 text-blue-400 border border-blue-500/20
                         {% elif order.status == 'assigned' %} bg-blue-500/10 text-blue-400 border border-blue-500/20
                         {% elif order.status == 'picked_up' %} bg-orange-500/10 text-orange-400 border border-orange-500/20
                         {% elif order.status == 'on_the_way' %} bg-mil-accent/10 text-mil-accent border border-mil-accent/20
                         {% elif order.status == 'delivered' %} bg-green-500/10 text-green-400 border border-green-500/20
                         {% else %} bg-red-500/10 text-red-400 border border-red-500/20 {% endif %}">
                         {% if order.status == 'pending' %}Order in Progress
+                        {% elif order.status == 'ready' %}Order to be Picked Up
                         {% elif order.status == 'assigned' %}Delivery Assigned
                         {% elif order.status == 'picked_up' %}Order in Progress
                         {% elif order.status == 'on_the_way' %}On Our Way

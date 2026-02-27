@@ -461,7 +461,7 @@ def update_order_status(order_id):
     data = request.get_json()
     new_status = data.get("status") if data else request.form.get("status")
     
-    if new_status in ['pending', 'completed', 'cancelled']:
+    if new_status in ['pending', 'ready', 'completed', 'cancelled']:
         order.status = new_status
         db.session.commit()
         if request.is_json:
