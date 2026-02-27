@@ -106,15 +106,13 @@
 {% endblock %}
 
 {% block extra_js %}
-<meta name="csrf-token" content="{{ csrf_token() }}">
 <script>
-    const CSRF = document.querySelector('meta[name="csrf-token"]').content;
 
     // ── Status updates ────────────────────────────────────────────────────────
     async function updateStatus(orderId, newStatus) {
         const res = await fetch(`/driver/api/order/${orderId}/status`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: newStatus })
         });
         if (res.ok) {
