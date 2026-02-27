@@ -125,7 +125,7 @@
     // ── GPS Location sharing ─────────────────────────────────────────────────
     // Share location for all active orders that are currently 'on_the_way'
     const onTheWayOrderIds = [
-        {% for order in active_orders %}{% if order.status == 'on_the_way' %} { { order.id } }, {% endif %} {% endfor %}
+        {% for order in active_orders %}{% if order.status == 'on_the_way' %} {{ order.id }}, {% endif %} {% endfor %}
     ];
 
     function postLocation(lat, lng) {
