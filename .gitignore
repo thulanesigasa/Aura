@@ -7,3 +7,5 @@ venv/
 dist/
 build/
 .DS_Store
+cookie.txt
+cookie2.txt
