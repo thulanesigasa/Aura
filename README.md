@@ -1,12 +1,27 @@
 # ⚡ Aura — Enterprise-Grade Spaza Platform
 
-> A hardened, community-centric service and delivery platform connecting South Africans to trusted local Spaza shops.
+> A hardened, community-centric service and delivery platform connecting South Africans to trusted local Spaza shops — with real-time order tracking, Uber-style live delivery maps, and a built-in delivery team management system.
 
 [![Python](https://img.shields.io/badge/Python-3.11-blue?logo=python)](https://python.org)
 [![Flask](https://img.shields.io/badge/Flask-3.1-black?logo=flask)](https://flask.palletsprojects.com)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?logo=postgresql)](https://postgresql.org)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker)](https://docker.com)
 [![Security](https://img.shields.io/badge/ModSecurity-WAF-red?logo=target)](https://owasp.org/www-project-modsecurity-core-rule-set/)
+
+---
+
+## 🔗 Application Portals
+
+Once the app is running, the following pages are available at `https://localhost`:
+
+| Portal | URL | Who uses it |
+|--------|-----|-------------|
+| 🛍️ **Client / Public** | [`https://localhost`](https://localhost) | Customers browsing shops & placing orders |
+| 📦 **Track an Order** | [`https://localhost/track`](https://localhost/track) | Clients tracking by order ID or phone number |
+| 🔐 **Admin Login** | [`https://localhost/admin/login`](https://localhost/admin/login) | Shop owners — manage products, orders & delivery team |
+| 🚲 **Delivery Portal** | [`https://localhost/driver/login`](https://localhost/driver/login) | Delivery people — view assigned orders, update status, share live GPS |
+
+> **Note:** The app uses a self-signed SSL certificate so your browser will show a security warning. Click **Advanced → Proceed to localhost** to continue.
 
 ---
 
@@ -23,90 +38,158 @@
 ## 🚀 Installation & Setup
 
 ### Prerequisites
-- [Docker Engine](https://docs.docker.com/get-docker/) (v20.10+) & Docker Compose V2
-- `git` installed
 
-### 1. Clone the Repository
+| Tool | Version | Install Guide |
+|------|---------|---------------|
+| **Docker Engine** | v20.10+ | [docs.docker.com/get-docker](https://docs.docker.com/get-docker/) |
+| **Docker Compose V2** | v2.0+ | Included with Docker Desktop / `apt install docker-compose-plugin` |
+| **Git** | any | [git-scm.com](https://git-scm.com/) |
+
+> **No Python or pip install needed** — everything runs inside Docker containers.
+
+---
+
+### Step 1 — Clone the Repository
+
 ```bash
 git clone git@github.com:thulanesigasa/Aura.git
 cd Aura
 ```
 
-### 2. Configure Environment Variables
-Create a `.env` file in the project root:
+---
+
+### Step 2 — Create the Environment File
+
+Create a `.env` file in the project root. Copy and paste the block below and replace the values:
+
 ```bash
-SECRET_KEY="your-super-secret-key-here"
+SECRET_KEY="change-this-to-a-long-random-string"
 DATABASE_URL="postgresql://aura_user:aura_pass@db:5432/aura_db"
 POSTGRES_USER="aura_user"
 POSTGRES_PASSWORD="aura_pass"
 POSTGRES_DB="aura_db"
 ```
 
-### 3. Build & Launch
+> Generate a secure `SECRET_KEY` with: `python3 -c "import secrets; print(secrets.token_hex(32))"`
+
+---
+
+### Step 3 — Build & Start
+
 ```bash
 docker compose up -d --build
 ```
 
-This starts three containers:
+This builds and starts three containers:
 
 | Container | Image | Role |
 |-----------|-------|------|
-| `aura-db` | `postgres:16-alpine` | PostgreSQL database |
-| `aura-web` | `aura-web` | Flask/Gunicorn app server |
-| `aura-proxy` | `aura-nginx` | Nginx reverse proxy with WAF |
+| `aura-db` | `postgres:16-alpine` | PostgreSQL 16 database |
+| `aura-web` | `aura-web` (custom) | Flask app served by Gunicorn |
+| `aura-proxy` | `aura-nginx` (custom) | Nginx reverse proxy + ModSecurity WAF |
 
-### 4. Verify Everything Is Running
-```bash
-docker compose ps
-```
-All three containers should show a **healthy** status. Example output:
-```
-NAME         IMAGE                STATUS                  PORTS
-aura-db      postgres:16-alpine   Up (healthy)            5432/tcp
-aura-proxy   aura-nginx           Up (healthy)            0.0.0.0:80->8080/tcp, 0.0.0.0:443->8443/tcp
-aura-web     aura-web             Up (healthy)            8000/tcp
-```
-
-### 5. Open in Your Browser
-
-| URL | Description |
-|-----|-------------|
-| [http://localhost](http://localhost) | Redirects to HTTPS automatically |
-| [https://localhost](https://localhost) | Main application (accept the self-signed cert warning) |
-
-> **Note:** Since the app uses a self-signed SSL certificate, your browser will show a security warning. Click **Advanced** → **Proceed to localhost** to continue.
+The database tables are created automatically on first boot.
 
 ---
 
-## 🛠️ Management & Operations
+### Step 4 — Verify Health
 
-### Access Points
-| Service | URL | Protected By |
-|---------|-----|--------------|
-| **Public Portal** | [https://localhost](https://localhost) | Nginx WAF |
-| **Admin Login** | [https://localhost/admin/login](https://localhost/admin/login) | MFA + Rate Limit |
-| **Sitemap** | [https://localhost/sitemap.xml](https://localhost/sitemap.xml) | Public |
-
-### Common Commands
 ```bash
-# View logs
+docker compose ps
+```
+
+All three containers should show **healthy**:
+
+```
+NAME         IMAGE                STATUS           PORTS
+aura-db      postgres:16-alpine   Up (healthy)     5432/tcp
+aura-proxy   aura-nginx           Up (healthy)     0.0.0.0:80->8080/tcp, 0.0.0.0:443->8443/tcp
+aura-web     aura-web             Up (healthy)     8000/tcp
+```
+
+---
+
+### Step 5 — Create Your First Admin Account
+
+```bash
+docker compose exec web python3 -c "
+from app import create_app
+from app.models import db, User, Shop
+
+app = create_app()
+with app.app_context():
+    # Create a shop first
+    shop = Shop(name='My Shop', slug='my-shop')
+    db.session.add(shop)
+    db.session.flush()
+
+    # Create admin user linked to shop
+    u = User(email='admin@example.com', shop_id=shop.id)
+    u.set_password('changeme')
+    db.session.add(u)
+    db.session.commit()
+    print('Admin created! Go to /admin/login')
+"
+```
+
+Then visit [`https://localhost/admin/login`](https://localhost/admin/login) and complete the MFA setup on first login.
+
+---
+
+## 🛠️ Common Commands
+
+```bash
+# View application logs
 docker compose logs web --tail 50
+
+# View Nginx / WAF logs
 docker compose logs nginx --tail 50
 
-# Restart services
+# Restart all services (e.g. after config changes)
 docker compose restart
 
 # Stop all containers
 docker compose down
 
-# Rebuild after code changes
+# Rebuild and restart after code changes
 docker compose up -d --build
+
+# Open a Python shell inside the running container
+docker compose exec web python3
 ```
 
-### Automation Scripts
-Located in the `scripts/` directory:
-- `./scripts/backup.sh` — Atomic PostgreSQL backup (stored in `backups/`).
-- `./scripts/security_audit.sh` — Run `pip-audit` to find vulnerable dependencies.
+---
+
+## 📱 Feature Overview
+
+### For Customers
+- Browse shops by city/location
+- Add items to cart and place orders
+- Track order by **Order ID** or **phone number** at `/track`
+- Live delivery map — see your delivery person's GPS location in real time when they're on the way
+
+### For Admins (`/admin`)
+- Manage products (add, edit, archive, stock toggle)
+- View incoming orders with live status updates
+- **Manage Delivery Team** — add delivery people (walkers, cyclists, drivers — any transport)
+- Assign orders to delivery people from the orders sidebar
+
+### For Delivery People (`/driver/login`)
+- Log in with email & password (no app install needed — works in any mobile browser)
+- See active assigned orders with delivery address and items
+- Update order status: **Picked Up → On My Way → Delivered**
+- When "On My Way" is tapped, GPS location is automatically shared every 5 seconds so customers can track in real time
+
+---
+
+## 🚲 Delivery System — No Paid Services
+
+The live tracking system uses **zero paid APIs**:
+
+- **GPS**: Native browser `navigator.geolocation` — works on any smartphone browser
+- **Maps**: [Leaflet.js](https://leafletjs.com/) (open source) with CartoDb dark tiles (free)
+- **Real-time**: Simple 5-second polling — no WebSockets needed
+- **Transport**: Works for cars, motorbikes, bicycles, or walking
 
 ---
 
@@ -114,17 +197,30 @@ Located in the `scripts/` directory:
 
 1. **SWR Registry**: Push images to Huawei Cloud Software Repository for Container.
 2. **CCE Engine**: Deploy using Cloud Container Engine for high availability.
-3. **WAF Service**: Use Huawei Cloud WAF alongside the local ModSecurity WAF for global DDoS protection.
+3. **WAF Service**: Use Huawei Cloud WAF alongside local ModSecurity for global DDoS protection.
 4. **RDS**: Replace the local `db` container with a managed **RDS PostgreSQL** instance.
 
 ---
 
 ## 🔍 SEO & Visibility
-- **Dynamic Sitemap**: Auto-updates as new shops register.
-- **JSON-LD Schema**: Implements `LocalBusiness` and `Organization` types for rich search snippets.
-- **Semantic HTML**: Optimized for accessibility and indexing.
+
+- **Dynamic Sitemap**: Auto-updates as new shops register (`/sitemap.xml`)
+- **JSON-LD Schema**: Implements `LocalBusiness` and `Organization` types for rich search snippets
+- **Semantic HTML**: Optimised for accessibility and search indexing
+
+---
+
+## 🔧 Automation Scripts
+
+Located in `scripts/`:
+
+```bash
+./scripts/backup.sh          # Atomic PostgreSQL backup → saved to backups/
+./scripts/security_audit.sh  # Run pip-audit to scan for vulnerable dependencies
+```
 
 ---
 
 ## 📄 License
+
 MIT © 2026 [thulanesigasa](https://github.com/thulanesigasa)
