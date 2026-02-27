@@ -29,6 +29,7 @@
             {% endwith %}
 
             <form method="POST" class="space-y-5">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div>
                     <label class="text-[10px] font-bold text-white/50 uppercase tracking-[2px] block mb-2">Email</label>
                     <input type="email" name="email" required
