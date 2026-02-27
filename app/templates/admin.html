@@ -849,8 +849,7 @@
                         {% for item in order.items %}
                         <div class="flex items-center justify-between text-[11px]">
                             <span class="text-white/80"><span class="font-bold text-white">{{ item.quantity }}x</span>
-                                {{ getattr(item, 'product_name', 'Product') if not hasattr(item, 'product') else
-                                item.product.name }}</span>
+                                {{ item.product.name if item.product else 'Product' }}</span>
                             <span class="text-white/50">R{{ "%.2f"|format(item.price) }}</span>
                         </div>
                         {% endfor %}
