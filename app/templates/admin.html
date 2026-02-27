@@ -250,9 +250,10 @@
             {% for driver in drivers %}
             <div class="flex items-center justify-between bg-white border border-mil-border px-6 py-4 shadow-sm">
                 <div class="flex items-center gap-4">
-                    <div
-                        class="w-10 h-10 bg-mil-accent/10 border border-mil-accent/20 rounded-full flex items-center justify-center text-lg">
-                        🏍️</div>
+                    <div class="w-10 h-10 rounded-full overflow-hidden border border-mil-border flex-shrink-0">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ driver.name|urlencode }}&backgroundColor=f8faff"
+                            class="w-full h-full object-cover" alt="{{ driver.name }}">
+                    </div>
                     <div>
                         <p class="font-bold text-mil-dark">{{ driver.name }}</p>
                         <p class="text-mil-softDark text-xs">{{ driver.email }}{% if driver.phone %} · {{ driver.phone
@@ -269,7 +270,10 @@
         </div>
         {% else %}
         <div class="bg-white border border-mil-border p-12 text-center shadow-sm">
-            <p class="text-5xl mb-4">🏍️</p>
+            <svg class="w-16 h-16 text-mil-border mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
+                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0" />
+            </svg>
             <p class="text-mil-softDark text-lg">No delivery people yet.</p>
             <p class="text-mil-softDark text-sm mt-2">Add your first delivery person above to start assigning orders.
             </p>
@@ -1000,7 +1004,7 @@
                         <div class="flex gap-2">
                             <select id="driver-select-{{ order.id }}"
                                 class="flex-1 bg-[rgba(0,0,0,0.4)] border border-white/10 text-white/70 text-[11px] rounded-lg px-3 py-2 focus:outline-none focus:border-mil-accent">
-                                <option value="">🏍️ Assign Driver…</option>
+                                <option value="">Assign Delivery Person&hellip;</option>
                                 {% for d in drivers %}
                                 <option value="{{ d.id }}" {% if order.driver_id==d.id %}selected{% endif %}>{{ d.name
                                     }}</option>
