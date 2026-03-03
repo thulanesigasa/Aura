@@ -1,0 +1,21 @@
+{
+  "name": "Aura Spaza Delivery",
+  "short_name": "Aura",
+  "description": "Aura Spaza Delivery platform connecting you to local Spaza shops.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1a1a",
+  "theme_color": "#FF9800",
+  "icons": [
+    {
+      "src": "/static/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
