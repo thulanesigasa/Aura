@@ -80,8 +80,8 @@
         </div>
 
         <!-- Live Driver Map (only shown when on_the_way) -->
-        <div id="mapSection" class="mt-8 rounded-2xl overflow-hidden border border-white/10 shadow-2xl"
-            style="display: {% if order.status == 'on_the_way' and order.driver_lat %}block{% else %}none{% endif %};">
+        <div id="mapSection"
+            class="mt-8 rounded-2xl overflow-hidden border border-white/10 shadow-2xl {{ 'hidden' if not (order.status == 'on_the_way' and order.driver_lat) }}">
             <div class="bg-[rgba(26,26,26,0.9)] px-6 py-4 flex items-center gap-3">
                 <span class="w-2.5 h-2.5 bg-mil-accent rounded-full animate-pulse"></span>
                 <p class="text-white font-bold text-sm">Driver is on the way</p>
@@ -112,7 +112,7 @@
 {% block extra_js %}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    const ORDER_ID = {{ order.id }};
+    const ORDER_ID = '{{ order.id }}';
     let map = null;
     let driverMarker = null;
 

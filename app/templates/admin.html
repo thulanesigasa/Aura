@@ -947,7 +947,7 @@
                             <h4 class="text-white font-bold">{{ order.customer_name }}</h4>
                         </div>
 
-                        <select onchange="updateOrderStatus({{ order.id }}, this.value)"
+                        <select onchange="updateOrderStatus('{{ order.id }}', this.value)"
                             class="bg-[rgba(0,0,0,0.5)] border border-[rgba(255,255,255,0.1)] text-xs rounded-lg focus:outline-none focus:border-mil-accent py-1.5 px-2 appearance-none cursor-pointer text-center font-bold uppercase tracking-[1px]
                                     {% if order.status == 'pending' %} text-yellow-500 {% elif order.status == 'ready' %} text-blue-400 {% elif order.status == 'completed' %} text-green-500 {% else %} text-red-500 {% endif %}">
                             <option value="pending" class="text-yellow-500" {% if order.status=='pending' %}selected{%
@@ -1011,7 +1011,7 @@
                                     }}</option>
                                 {% endfor %}
                             </select>
-                            <button onclick="assignDriver({{ order.id }})"
+                            <button onclick="assignDriver('{{ order.id }}')"
                                 class="px-4 py-2 bg-mil-accent/10 border border-mil-accent/20 text-mil-accent text-[11px] font-bold rounded-lg hover:bg-mil-accent/20 transition-all">
                                 Assign
                             </button>
@@ -1060,7 +1060,7 @@
                                 <h4 class="text-white/70 font-bold text-sm">{{ order.customer_name }}</h4>
                             </div>
 
-                            <select onchange="updateOrderStatus({{ order.id }}, this.value)"
+                            <select onchange="updateOrderStatus('{{ order.id }}', this.value)"
                                 class="bg-[rgba(0,0,0,0.3)] border border-[rgba(255,255,255,0.05)] text-[10px] rounded-lg focus:outline-none focus:border-mil-accent py-1 px-2 appearance-none cursor-pointer text-center font-bold uppercase tracking-[1px]
                                         {% if order.status == 'pending' %} text-yellow-500/70 {% elif order.status == 'completed' %} text-green-500/70 {% else %} text-red-500/70 {% endif %}">
                                 <option value="pending" class="text-yellow-500" {% if order.status=='pending'

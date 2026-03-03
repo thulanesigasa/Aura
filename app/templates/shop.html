@@ -70,28 +70,30 @@
                     <h3 class="text-[11px] font-bold text-mil-dark uppercase tracking-[2px]">Hours</h3>
                 </div>
                 <div class="text-sm text-mil-dark space-y-1">
+                    <div id="opening-hours-data" data-hours="{{ (shop.opening_hours or '{}') | tojson | safe }}"
+                        class="hidden"></div>
                     <script>
                         (function () {
                             try {
-                                const raw = {{ (shop.opening_hours or '{}')| safe
-                            }};
-                        const hours = typeof raw === 'string' ? JSON.parse(raw) : raw;
-                        const mapping = {
-                            'mon-fri': 'Mon - Fri',
-                            'sat-sun': 'Sat - Sun',
-                            'holidays': 'Holidays'
-                        };
-                        let html = '';
-                        for (const [id, label] of Object.entries(mapping)) {
-                            if (hours[id] && hours[id].open && hours[id].close) {
-                                html += `<p class="flex justify-between"><span class="font-bold text-mil-softDark mr-4">${label}:</span> <span>${hours[id].open} - ${hours[id].close}</span></p>`;
-                            }
-                        }
-                        document.write(html || '<p class="text-mil-softDark italic">Contact for hours</p>');
+                                const dataEl = document.getElementById('opening-hours-data');
+                                const raw = dataEl ? dataEl.dataset.hours : '{}';
+                                const hours = typeof raw === 'string' ? JSON.parse(raw) : raw;
+                                const mapping = {
+                                    'mon-fri': 'Mon - Fri',
+                                    'sat-sun': 'Sat - Sun',
+                                    'holidays': 'Holidays'
+                                };
+                                let html = '';
+                                for (const [id, label] of Object.entries(mapping)) {
+                                    if (hours[id] && hours[id].open && hours[id].close) {
+                                        html += `<p class="flex justify-between"><span class="font-bold text-mil-softDark mr-4">${label}:</span> <span>${hours[id].open} - ${hours[id].close}</span></p>`;
+                                    }
+                                }
+                                document.write(html || '<p class="text-mil-softDark italic">Contact for hours</p>');
                             } catch (e) {
-                            document.write('<p class="text-mil-softDark italic">Contact for hours</p>');
-                        }
-                        }) ();
+                                document.write('<p class="text-mil-softDark italic">Contact for hours</p>');
+                            }
+                        })();
                     </script>
                 </div>
             </div>
@@ -159,16 +161,16 @@
                             <button data-id="{{ product.id }}" data-name="{{ product.name }}"
                                 data-price="{{ product.price }}" data-shop="{{ shop.id }}"
                                 data-image="{{ product.image_url if product.image_url else ('https://api.dicebear.com/7.x/icons/svg?seed=' ~ product.name|urlencode|replace('%', '') ~ '&backgroundColor=f8faff') }}"
-                                onclick="auraCart.addItem(this.dataset.id, this.dataset.name, this.dataset.price, this.dataset.shop, this.dataset.image)"
+                                onclick="auraCart.addItem('{{ product.id }}', this.dataset.name, this.dataset.price, this.dataset.shop, this.dataset.image)"
                                 class="add-to-cart-btn px-6 py-2 text-white text-[10px] uppercase tracking-[2px] font-bold hover:bg-mil-accent transition-all whitespace-nowrap w-full h-full flex items-center justify-center">
                                 Add to Cart
                             </button>
                             <!-- Quantity selector (Hidden by default, shown via JS) -->
                             <div class="qty-selector hidden items-center">
-                                <button onclick="auraCart.updateQuantity({{ product.id }}, -1)"
+                                <button onclick="auraCart.updateQuantity('{{ product.id }}', -1)"
                                     class="w-10 h-10 flex items-center justify-center text-white hover:bg-white/10 transition-all font-bold text-lg border-r border-white/5">-</button>
                                 <span class="qty-count text-white text-xs font-bold w-10 text-center">0</span>
-                                <button onclick="auraCart.updateQuantity({{ product.id }}, 1)"
+                                <button onclick="auraCart.updateQuantity('{{ product.id }}', 1)"
                                     class="w-10 h-10 flex items-center justify-center text-white hover:bg-white/10 transition-all font-bold text-lg border-l border-white/5">+</button>
                             </div>
                         </div>

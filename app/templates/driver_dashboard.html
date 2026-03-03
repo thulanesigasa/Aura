@@ -54,17 +54,17 @@
 
                 <div class="flex gap-3">
                     {% if order.status == 'assigned' %}
-                    <button onclick="updateStatus({{ order.id }}, 'picked_up')"
+                    <button onclick="updateStatus('{{ order.id }}', 'picked_up')"
                         class="flex-1 py-3 bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 font-bold text-sm rounded-xl hover:bg-yellow-500/20 transition-all">
                         Order in Progress
                     </button>
                     {% elif order.status == 'picked_up' %}
-                    <button onclick="updateStatus({{ order.id }}, 'on_the_way')"
+                    <button onclick="updateStatus('{{ order.id }}', 'on_the_way')"
                         class="flex-1 py-3 bg-mil-accent/10 border border-mil-accent/20 text-mil-accent font-bold text-sm rounded-xl hover:bg-mil-accent/20 transition-all">
                         On Our Way
                     </button>
                     {% elif order.status == 'on_the_way' %}
-                    <button onclick="updateStatus({{ order.id }}, 'delivered')"
+                    <button onclick="updateStatus('{{ order.id }}', 'delivered')"
                         class="flex-1 py-3 bg-green-500/10 border border-green-500/20 text-green-400 font-bold text-sm rounded-xl hover:bg-green-500/20 transition-all">
                         Mark as Delivered
                     </button>
@@ -106,6 +106,9 @@
 {% endblock %}
 
 {% block extra_js %}
+<div id="on-the-way-data"
+    data-ids="{{ active_orders | selectattr('status', 'equalto', 'on_the_way') | map(attribute='id') | list | tojson | safe }}"
+    class="hidden"></div>
 <script>
 
     // ── Status updates ────────────────────────────────────────────────────────
@@ -124,9 +127,7 @@
 
     // ── GPS Location sharing ─────────────────────────────────────────────────
     // Share location for all active orders that are currently 'on_the_way'
-    const onTheWayOrderIds = [
-        {% for order in active_orders %}{% if order.status == 'on_the_way' %} {{ order.id }}, {% endif %} {% endfor %}
-    ];
+    const onTheWayOrderIds = JSON.parse(document.getElementById('on-the-way-data')?.dataset?.ids || '[]');
 
     function postLocation(lat, lng) {
         onTheWayOrderIds.forEach(orderId => {
