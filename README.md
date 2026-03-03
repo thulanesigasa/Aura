@@ -58,19 +58,12 @@ cd Aura
 
 ---
 
-### Step 2 — Create the Environment File
+### Step 2 — Environment Configuration
 
-Create a `.env` file in the project root. Copy and paste the block below and replace the values:
+For development, you can use basic credentials. **For Production on Huawei Cloud**, ensure you use cryptographically secure values.
+We have pre-configured a secure `.env` file in this repository.
 
-```bash
-SECRET_KEY="change-this-to-a-long-random-string"
-DATABASE_URL="postgresql://aura_user:aura_pass@db:5432/aura_db"
-POSTGRES_USER="aura_user"
-POSTGRES_PASSWORD="aura_pass"
-POSTGRES_DB="aura_db"
-```
-
-> Generate a secure `SECRET_KEY` with: `python3 -c "import secrets; print(secrets.token_hex(32))"`
+> Generate a new secure `SECRET_KEY` anytime with: `python3 -c "import secrets; print(secrets.token_hex(32))"`
 
 ---
 
@@ -195,10 +188,23 @@ The live tracking system uses **zero paid APIs**:
 
 ## 🌍 Deployment (Huawei Cloud)
 
-1. **SWR Registry**: Push images to Huawei Cloud Software Repository for Container.
-2. **CCE Engine**: Deploy using Cloud Container Engine for high availability.
-3. **WAF Service**: Use Huawei Cloud WAF alongside local ModSecurity for global DDoS protection.
-4. **RDS**: Replace the local `db` container with a managed **RDS PostgreSQL** instance.
+Before driving real traffic to the site on your Huawei Elastic Cloud Server (ECS), you must prepare the environment for production:
+
+1. **Production SSL Certificates**: 
+   The default setup uses self-signed certificates. To prevent browser security warnings, run the Let's Encrypt setup script:
+   ```bash
+   ./scripts/init_ssl.sh
+   # Follow the prompts, then rebuild the proxy:
+   docker compose up -d --build nginx
+   ```
+
+2. **Production Credentials**:
+   Ensure `SECRET_KEY` and your database passwords in the `.env` file are set to cryptographically secure values.
+
+3. **SWR Registry**: Push images to Huawei Cloud Software Repository for Container.
+4. **CCE Engine**: Deploy using Cloud Container Engine for high availability.
+5. **WAF Service**: Use Huawei Cloud WAF alongside local ModSecurity for global DDoS protection.
+6. **RDS**: Replace the local `db` container with a managed **RDS PostgreSQL** instance.
 
 ---
 
