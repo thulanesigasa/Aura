@@ -9,3 +9,9 @@ build/
 .DS_Store
 cookie.txt
 cookie2.txt
+
+# Databases
+*.sqlite
+*.sqlite3
+*.db
+instance/

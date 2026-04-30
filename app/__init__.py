@@ -39,12 +39,18 @@ def create_app():
         return User.query.get(int(user_id))
 
     from . import routes
+    from .api_mobile import api_mobile_bp
+    
     app.register_blueprint(routes.bp)
+    app.register_blueprint(api_mobile_bp)
 
     # Exempt driver JSON API endpoints from CSRF — they're protected by driver session checks
     # and are pure JSON APIs, not form submissions
     csrf.exempt(routes.driver_update_status)
     csrf.exempt(routes.driver_post_location)
     csrf.exempt(routes.order_location)
+    
+    # Exempt the entire mobile API blueprint from CSRF (uses JWT)
+    csrf.exempt(api_mobile_bp)
 
     return app
